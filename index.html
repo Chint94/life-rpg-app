@@ -2445,6 +2445,28 @@ let timerRunning = false;
 let unsubRoles = null, unsubTasks = null, unsubJournals = null, unsubUser = null;
 let selectedTimelineDate = new Date();
 
+// Prevent browser scroll restoration from pushing Headquarters to the bottom after refresh.
+try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (_) {}
+
+function ccResetMainScrollTop() {
+  const mc = document.getElementById('main-content');
+  if (!mc) return;
+  mc.scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+
+function ccResetMainScrollTopRepeated() {
+  ccResetMainScrollTop();
+  requestAnimationFrame(ccResetMainScrollTop);
+  setTimeout(ccResetMainScrollTop, 80);
+  setTimeout(ccResetMainScrollTop, 250);
+  setTimeout(ccResetMainScrollTop, 700);
+}
+
+window.addEventListener('pageshow', ccResetMainScrollTopRepeated);
+window.addEventListener('load', ccResetMainScrollTopRepeated);
+
+
 // ─────────────────────────────────────────────
 // LOCAL-FIRST CACHE FALLBACK
 // Keeps add/edit/delete working even if Firestore is slow or blocked.
@@ -2581,11 +2603,8 @@ onAuthStateChanged(auth, async (user) => {
     loadLocalState();
     renderAllLocal();
     initListeners();
-    // Always start at the top of Headquarters on load
-    setTimeout(() => {
-      const mc = document.getElementById('main-content');
-      if (mc) mc.scrollTop = 0;
-    }, 80);
+    // Always start at the top of Headquarters on load, even if browser restores old scroll.
+    ccResetMainScrollTopRepeated();
   } else {
     currentUser = null;
     document.getElementById('app').classList.add('hidden');
@@ -2660,7 +2679,7 @@ window.switchScreen = (name, navEl) => {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
-  document.getElementById('main-content').scrollTop = 0;
+  ccResetMainScrollTopRepeated();
   const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', discover: '📰 DISCOVER', settings: '⚙ SETTINGS & GUIDE' };
   document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
@@ -4604,7 +4623,7 @@ window.gcalSync = async () => {
 
 // ═══════════════════════════════════════════════════════════════
 // DISCOVER — THE DAILY BRIEF BY ZERODHA
-// Updated: robust loading via RSS + multiple CORS fallbacks.
+// Fast loader update: cache-first rendering + parallel fetch fallbacks.
 // Keeps this change isolated to the Discover section only.
 // ═══════════════════════════════════════════════════════════════
 
@@ -4612,12 +4631,15 @@ const DISC_BASE        = 'https://thedailybrief.zerodha.com';
 const DISC_FEED_URL    = DISC_BASE + '/feed';
 const DISC_ARCHIVE_URL = DISC_BASE + '/api/v1/archive';
 const DISC_POST_URL    = (slug) => `${DISC_BASE}/api/v1/posts/${slug}`;
-const DISC_PAGE_SIZE   = 3;    // show latest 3 articles first
+const DISC_PAGE_SIZE   = 3;
+const DISC_CACHE_KEY   = 'cc_discover_dailybrief_cache_v3';
+const DISC_CACHE_TTL   = 1000 * 60 * 45; // 45 minutes
 
 let discAllItems    = [];
 let discFiltered    = [];
 let discPage        = 0;
 let discInitialised = false;
+let discLoading     = false;
 let discFontSize    = parseInt(localStorage.getItem('cc_disc_font') || '17', 10);
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -4663,62 +4685,95 @@ function discDecodeEntities(text) {
   return ta.value;
 }
 
-// ── Robust network fetch ──────────────────────────────────────
-// The older version used only allorigins /get. That often fails inside
-// Android WebView/browser environments. This tries direct first, then
-// multiple read-only CORS mirrors. If one fails, the next one is used.
+function discStripHtml(html) {
+  const d = document.createElement('div');
+  d.innerHTML = html || '';
+  return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
+}
 
-async function discFetchText(url, timeoutMs = 18000) {
+function discFormatDate(isoStr) {
+  if (!isoStr) return 'Latest';
+  const d = new Date(isoStr);
+  if (isNaN(d)) return 'Latest';
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function discReadCache() {
+  try {
+    const raw = localStorage.getItem(DISC_CACHE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data?.items?.length) return null;
+    return data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function discWriteCache(items) {
+  try {
+    localStorage.setItem(DISC_CACHE_KEY, JSON.stringify({ ts: Date.now(), items }));
+  } catch (e) {
+    console.warn('Discover cache write failed:', e);
+  }
+}
+
+function discApplyItems(items, statusMsg) {
+  discAllItems = Array.isArray(items) ? items : [];
+  discFiltered = [...discAllItems];
+  discPage = 0;
+  discRenderPage();
+  discSetStatus(statusMsg || `${Math.min(3, discAllItems.length)} latest articles shown. Tap an article to read it here.`, 'ok');
+}
+
+// ── Fast network fetch ────────────────────────────────────────
+// Old code tried mirrors one-by-one with long timeouts. That made the
+// Discover section sit on “Loading…” for a long time. This version races
+// multiple read-only sources in parallel and uses a shorter timeout.
+
+function discTimeout(ms) {
+  return new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+}
+
+async function discFetchOneText(url, timeoutMs = 8500) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || !text.trim()) throw new Error('Empty response');
+    return text;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function discFetchText(url, timeoutMs = 8500) {
   const targets = [
     url,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     `https://corsproxy.io/?${encodeURIComponent(url)}`
   ];
-  let lastErr = null;
-  for (const target of targets) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(target, { cache: 'no-store', signal: controller.signal });
-      clearTimeout(timer);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      if (text && text.trim()) return text;
-      throw new Error('Empty response');
-    } catch (e) {
-      clearTimeout(timer);
-      lastErr = e;
-      console.warn('Discover fetch fallback failed:', target, e);
-    }
+
+  const attempts = targets.map(target =>
+    discFetchOneText(target, timeoutMs).catch(err => {
+      console.warn('Discover fetch fallback failed:', target, err);
+      throw err;
+    })
+  );
+
+  try {
+    return await Promise.any(attempts);
+  } catch (e) {
+    throw new Error('Unable to fetch article data from the available sources');
   }
-  throw lastErr || new Error('Unable to fetch article data');
 }
 
-async function discFetchJson(url, timeoutMs = 18000) {
+async function discFetchJson(url, timeoutMs = 8500) {
   const text = await discFetchText(url, timeoutMs);
   return JSON.parse(text);
-}
-
-async function discFetchReaderMarkdown(url) {
-  const readerUrl = `https://r.jina.ai/http://r.jina.ai/http://http://r.jina.ai/http://`;
-  // Standard Jina Reader URL format: https://r.jina.ai/http://r.jina.ai/http://https://site/page
-  const properReaderUrl = `https://r.jina.ai/http://r.jina.ai/http://https://r.jina.ai/http://`;
-  const finalUrl = `https://r.jina.ai/http://r.jina.ai/http://https://r.jina.ai/http://`;
-  // Fallback-friendly direct reader URL. Kept separate to avoid touching the rest of the app.
-  return discFetchText(`https://r.jina.ai/http://r.jina.ai/http://https://r.jina.ai/http://` + encodeURIComponent(url), 20000);
-}
-
-function discMarkdownToHtml(md) {
-  let text = discEsc(md || '');
-  text = text
-    .replace(/^# (.*)$/gm, '<h2>$1</h2>')
-    .replace(/^## (.*)$/gm, '<h3>$1</h3>')
-    .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-    .replace(/\n\s*\n/g, '</p><p>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\[(.*?)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-  return `<p>${text}</p>`;
 }
 
 // ── Clean HTML for safe rendering ────────────────────────────
@@ -4730,8 +4785,7 @@ function discCleanHtml(raw) {
   div.querySelectorAll('*').forEach(el => {
     [...el.attributes].forEach(attr => {
       const n = attr.name.toLowerCase();
-      if (n.startsWith('on') || n === 'srcset') el.removeAttribute(attr.name);
-      if (n === 'style') el.removeAttribute(attr.name);
+      if (n.startsWith('on') || n === 'srcset' || n === 'style') el.removeAttribute(attr.name);
     });
     if (el.tagName === 'A') {
       const href = el.getAttribute('href') || '';
@@ -4748,31 +4802,26 @@ function discCleanHtml(raw) {
   return div.innerHTML.trim();
 }
 
-function discStripHtml(html) {
-  const d = document.createElement('div');
-  d.innerHTML = html || '';
-  return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
-}
-
-function discFormatDate(isoStr) {
-  if (!isoStr) return 'Latest';
-  const d = new Date(isoStr);
-  if (isNaN(d)) return 'Latest';
-  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-}
-
 // ── Feed/API parsing ──────────────────────────────────────────
+
+function discGetNodeText(node, selectors) {
+  for (const sel of selectors) {
+    const found = node.querySelector(sel);
+    if (found?.textContent?.trim()) return found.textContent.trim();
+  }
+  return '';
+}
 
 function discParseRss(xmlText) {
   const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
   const nodes = [...xml.querySelectorAll('item')];
   return nodes.map((node, idx) => {
-    const get = (sel) => node.querySelector(sel)?.textContent?.trim() || '';
-    const title = discDecodeEntities(get('title')) || 'Untitled';
-    const link = get('link') || `${DISC_BASE}/`;
-    const pubDate = get('pubDate') || get('dc\\:date') || get('date');
-    const content = get('encoded') || get('content\\:encoded') || get('description') || '';
-    const subtitle = discStripHtml(get('description')).slice(0, 150);
+    const title = discDecodeEntities(discGetNodeText(node, ['title'])) || 'Untitled';
+    const link = discGetNodeText(node, ['link', 'guid']) || `${DISC_BASE}/`;
+    const pubDate = discGetNodeText(node, ['pubDate', 'dc\\:date', 'date']);
+    const content = discGetNodeText(node, ['content\\:encoded', 'encoded', 'description']);
+    const desc = discGetNodeText(node, ['description']);
+    const subtitle = discStripHtml(desc).slice(0, 150);
     const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
     return {
       id: `rss-${idx}-${link}`,
@@ -4783,17 +4832,17 @@ function discParseRss(xmlText) {
       dateRaw: pubDate,
       link,
       coverImage: imgMatch ? discAbsUrl(imgMatch[1]) : null,
-      excerpt: discStripHtml(content || subtitle).slice(0, 220),
+      excerpt: discStripHtml(content || desc).slice(0, 220),
       fullLoaded: !!content,
       fullHtml: content ? discCleanHtml(content) : ''
     };
-  });
+  }).filter(x => x.title && x.link);
 }
 
 async function discFetchList(offset = 0, limit = 12) {
-  // Primary: site RSS, because it usually contains the full readable article.
+  // Primary: RSS feed. It is fastest when available and often includes readable content.
   try {
-    const xml = await discFetchText(DISC_FEED_URL, 18000);
+    const xml = await discFetchText(DISC_FEED_URL, 8500);
     const rssItems = discParseRss(xml).slice(offset, offset + limit);
     if (rssItems.length) return rssItems;
   } catch (e) {
@@ -4801,7 +4850,7 @@ async function discFetchList(offset = 0, limit = 12) {
   }
 
   // Fallback: Substack archive API.
-  const data = await discFetchJson(`${DISC_ARCHIVE_URL}?limit=${limit}&offset=${offset}`, 18000);
+  const data = await discFetchJson(`${DISC_ARCHIVE_URL}?limit=${limit}&offset=${offset}`, 8500);
   return (data || []).map(post => ({
     id:          post.id,
     title:       post.title || 'Untitled',
@@ -4818,21 +4867,18 @@ async function discFetchList(offset = 0, limit = 12) {
 }
 
 async function discFetchBody(item) {
-  // If RSS already gave us the full article, use it directly.
   if (item?.fullHtml) return item.fullHtml;
 
-  // Try Substack post API first.
   if (item?.slug) {
     try {
-      const data = await discFetchJson(DISC_POST_URL(item.slug), 20000);
+      const data = await discFetchJson(DISC_POST_URL(item.slug), 8500);
       if (data?.body_html) return discCleanHtml(data.body_html);
     } catch (e) {
       console.warn('Post API failed, trying readable page:', e);
     }
   }
 
-  // Last fallback: load the public page and extract likely article content.
-  const html = await discFetchText(item.link, 20000);
+  const html = await discFetchText(item.link, 8500);
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const article = doc.querySelector('article') || doc.querySelector('.body') || doc.querySelector('main') || doc.body;
   return discCleanHtml(article ? article.innerHTML : html);
@@ -4912,6 +4958,7 @@ window.discToggleCard = async (i) => {
     item.fullHtml    = await discFetchBody(item);
     item.fullLoaded  = true;
     inner.innerHTML  = item.fullHtml || '<p>Article loaded, but no readable text was found.</p>';
+    discWriteCache(discAllItems);
   } catch (e) {
     console.error('discFetchBody error:', e);
     inner.innerHTML = `<p style="color:#b42318;font-family:'Rajdhani',sans-serif;font-weight:700;">
@@ -4957,31 +5004,50 @@ window.discOnSearch = () => {
 
 // ── Refresh ───────────────────────────────────────────────────
 
-window.discRefresh = async () => {
+window.discRefresh = async (force = true) => {
+  if (discLoading) return;
+  discLoading = true;
+
   const btn     = document.getElementById('discRefreshBtn');
   const feed    = document.getElementById('discFeed');
   const moreBtn = document.getElementById('discLoadMore');
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
   if (moreBtn) moreBtn.style.display = 'none';
-  if (feed) feed.innerHTML = discRenderSkeletons(3);
 
-  discSetStatus('Fetching latest articles from The Daily Brief…');
+  const cached = discReadCache();
+  const freshEnough = cached && (Date.now() - cached.ts < DISC_CACHE_TTL);
+
+  if (!force && cached?.items?.length) {
+    discApplyItems(cached.items, freshEnough
+      ? 'Loaded instantly from saved articles. Refreshing quietly in the background…'
+      : 'Showing saved articles while checking for the latest ones…');
+  } else if (feed) {
+    feed.innerHTML = discRenderSkeletons(3);
+    discSetStatus('Fetching latest articles from The Daily Brief…');
+  }
 
   try {
-    discAllItems = await discFetchList(0, 12);
-    discFiltered = [...discAllItems];
-    discPage     = 0;
-    discRenderPage();
-    discSetStatus(`${Math.min(3, discAllItems.length)} latest articles shown. Tap an article to read it here.`, 'ok');
+    const latest = await discFetchList(0, 12);
+    if (latest?.length) {
+      discWriteCache(latest);
+      discApplyItems(latest, `${Math.min(3, latest.length)} latest articles shown. Tap an article to read it here.`);
+    } else {
+      throw new Error('No articles returned');
+    }
   } catch (e) {
     console.error('discRefresh error:', e);
-    if (feed) feed.innerHTML = `<div class="disc-empty">
-      <span class="disc-empty-icon">⚠️</span>
-      Could not load articles. Tap ↻ REFRESH again, or check if your network blocks public feed proxies.
-    </div>`;
-    discSetStatus('Failed to load articles. Refresh will now try multiple fallback sources.', 'error');
+    if (cached?.items?.length) {
+      discApplyItems(cached.items, 'Could not refresh now, so saved articles are shown.', 'ok');
+    } else if (feed) {
+      feed.innerHTML = `<div class="disc-empty">
+        <span class="disc-empty-icon">⚠️</span>
+        Could not load articles. Tap ↻ REFRESH again, or check if your network blocks public feed proxies.
+      </div>`;
+      discSetStatus('Failed to load articles. Refresh will try multiple fallback sources again.', 'error');
+    }
   } finally {
+    discLoading = false;
     if (btn) { btn.disabled = false; btn.textContent = '↻ REFRESH'; }
   }
 };
@@ -4992,7 +5058,7 @@ function discInit() {
   discSetFont(discFontSize);
   if (discInitialised) return;
   discInitialised = true;
-  discRefresh();
+  discRefresh(false);
 }
 </script>
 </body>
