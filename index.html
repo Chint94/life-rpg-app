@@ -3597,10 +3597,17 @@ function driveInitTokenClient() {
   driveTokenClient = window.google.accounts.oauth2.initTokenClient({
     client_id: DRIVE_CLIENT_ID,
     scope: ALL_SCOPES,
+    // prompt:'' reuses existing token silently — fine for Drive operations
+    prompt: '',
     callback: async (resp) => {
       if (resp.error) { driveShowStatus('Google sign-in failed: ' + resp.error); return; }
       driveAccessToken = resp.access_token;
       localStorage.setItem('cc_drive_token', resp.access_token);
+      // Also update gcal token if available — one sign-in benefits both
+      if (!localStorage.getItem('cc_gcal_token')) {
+        gcalAccessToken = resp.access_token;
+        localStorage.setItem('cc_gcal_token', resp.access_token);
+      }
       await driveEnsureFolder();
       driveShowConnectedUI();
     }
@@ -3901,11 +3908,15 @@ function gcalMarkConnected() {
 }
 
 // ── GIS sign-in for Calendar ─────────────────────────────────
-// We reuse the same OAuth Client ID as Drive.
-// The token client is re-initialised each time because the GIS
-// library resets it when the page loads.
+// IMPORTANT: Calendar scope is stored separately from Drive scope.
+// cc_gcal_token = token that has BOTH drive.file + calendar.readonly
+// cc_drive_token = may only have drive.file (legacy)
+//
+// We always use prompt:'consent' for gcalSignIn so Google presents
+// the full consent screen and issues a token with ALL_SCOPES.
+// prompt:'' would silently return the old drive-only token.
 
-function gcalInitTokenClient(onSuccess) {
+function gcalInitTokenClient(forceConsent, callback) {
   if (!window.google?.accounts?.oauth2) {
     gcalSetStatus('Google Identity Services not yet loaded — please wait a moment and try again.', 'warn');
     return;
@@ -3913,21 +3924,26 @@ function gcalInitTokenClient(onSuccess) {
   const tc = window.google.accounts.oauth2.initTokenClient({
     client_id: DRIVE_CLIENT_ID,
     scope: ALL_SCOPES,
+    // prompt:'consent' forces Google to re-show the consent screen so the
+    // user explicitly grants calendar.readonly. Without this, GIS silently
+    // reuses the cached drive-only token → "insufficient authentication scopes".
+    prompt: forceConsent ? 'consent' : '',
     callback: (resp) => {
       if (resp.error) {
         gcalSetStatus('Google sign-in failed: ' + resp.error, 'error');
         return;
       }
-      // Share the token with Drive too so Drive + Calendar both work from one sign-in
+      // Store under a separate key so it doesn't overwrite the drive-only token
       gcalAccessToken  = resp.access_token;
       driveAccessToken = resp.access_token;
+      localStorage.setItem('cc_gcal_token',  resp.access_token);
       localStorage.setItem('cc_drive_token', resp.access_token);
       gcalMarkConnected();
       gcalSetStatus('Connected! Select a date range and tap Pull Events.', 'ok');
-      if (typeof onSuccess === 'function') onSuccess();
+      if (typeof callback === 'function') callback();
     }
   });
-  tc.requestAccessToken({ prompt: '' });
+  tc.requestAccessToken();
 }
 
 window.gcalSignIn = () => {
@@ -3935,16 +3951,21 @@ window.gcalSignIn = () => {
     gcalSetStatus('No OAuth Client ID configured. See the Setup Guide.', 'error');
     return;
   }
+  if (!window.google?.accounts?.oauth2) {
+    gcalSetStatus('Google Identity Services still loading — please wait a moment and try again.', 'warn');
+    return;
+  }
   gcalClearStatus();
   gcalSetStatus('Opening Google sign-in…', 'info');
-  gcalInitTokenClient();
+  // Always force consent so the calendar.readonly scope is explicitly granted
+  gcalInitTokenClient(true);
 };
 
 // ── Restore connection state on page load ────────────────────
-// If the user connected Drive before, the same token covers Calendar.
-// Mark as connected so the date section appears immediately.
+// Only restore from cc_gcal_token (which has both scopes).
+// Never restore from cc_drive_token alone — it may only have drive scope.
 (function gcalRestoreState() {
-  const saved = localStorage.getItem('cc_drive_token');
+  const saved = localStorage.getItem('cc_gcal_token');
   if (saved) {
     gcalAccessToken  = saved;
     driveAccessToken = saved;
@@ -4006,17 +4027,49 @@ window.gcalSync = async () => {
       });
 
       if (res.status === 401) {
-        // Token expired — clear and ask to reconnect
+        // Token expired or has insufficient scope — clear both tokens and force re-consent
         gcalAccessToken  = null;
         driveAccessToken = null;
+        localStorage.removeItem('cc_gcal_token');
         localStorage.removeItem('cc_drive_token');
         gcalConnected = false;
         const btn = document.getElementById('gcal-connect-btn');
         if (btn) { btn.textContent = 'Connect Google Account'; btn.classList.remove('connected'); btn.disabled = false; }
         const ds = document.getElementById('gcal-date-section');
         if (ds) ds.style.display = 'none';
-        gcalSetStatus('Session expired. Please reconnect your Google Account and sync again.', 'error');
+        gcalSetStatus(
+          'Session expired or Calendar access was not granted. ' +
+          'Please click "Connect Google Account" — when Google's consent screen appears, ' +
+          'make sure to allow both Drive and Calendar access.',
+          'error'
+        );
         return;
+      }
+      if (res.status === 403) {
+        // 403 with "insufficientPermissions" = token exists but lacks calendar scope
+        const err403 = await res.json().catch(() => ({}));
+        const reason  = err403?.error?.errors?.[0]?.reason || '';
+        if (reason === 'insufficientPermissions' || (err403?.error?.message || '').toLowerCase().includes('scope')) {
+          gcalAccessToken  = null;
+          driveAccessToken = null;
+          localStorage.removeItem('cc_gcal_token');
+          localStorage.removeItem('cc_drive_token');
+          gcalConnected = false;
+          const btn403 = document.getElementById('gcal-connect-btn');
+          if (btn403) { btn403.textContent = 'Connect Google Account'; btn403.classList.remove('connected'); btn403.disabled = false; }
+          const ds403 = document.getElementById('gcal-date-section');
+          if (ds403) ds403.style.display = 'none';
+          gcalSetStatus(
+            'Calendar access not granted. Your previous sign-in only authorised Google Drive. ' +
+            'Please click "Connect Google Account" again — on the consent screen that appears, ' +
+            'make sure to allow Calendar access.',
+            'error'
+          );
+          if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = '↓ PULL EVENTS AS TASKS'; }
+          return;
+        }
+        const err403msg = err403?.error?.message || `API error 403`;
+        throw new Error(err403msg);
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
