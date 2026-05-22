@@ -784,6 +784,67 @@ let timerRunning = false;
 let unsubRoles = null, unsubTasks = null, unsubJournals = null, unsubUser = null;
 
 // ─────────────────────────────────────────────
+// LOCAL-FIRST CACHE FALLBACK
+// Keeps add/edit/delete working even if Firestore is slow or blocked.
+// Firestore sync is still attempted after every local save.
+// ─────────────────────────────────────────────
+function cacheKey() {
+  const id = currentUser?.uid || currentUser?.email || 'guest';
+  return `lifeRPGCache:${id}`;
+}
+
+function safeLocalClone(obj) {
+  return JSON.parse(JSON.stringify(obj || {}));
+}
+
+function loadLocalState() {
+  try {
+    const raw = localStorage.getItem(cacheKey());
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    roles = saved.roles || roles || {};
+    tasks = saved.tasks || tasks || {};
+    journals = saved.journals || journals || {};
+    userData = { ...userData, ...(saved.userData || {}) };
+  } catch (e) {
+    console.warn('Local cache load failed:', e);
+  }
+}
+
+function persistLocalState() {
+  try {
+    localStorage.setItem(cacheKey(), JSON.stringify({
+      roles: safeLocalClone(roles),
+      tasks: safeLocalClone(tasks),
+      journals: safeLocalClone(journals),
+      userData: safeLocalClone(userData)
+    }));
+  } catch (e) {
+    console.warn('Local cache save failed:', e);
+  }
+}
+
+function newLocalId(prefix) {
+  const rand = (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  return `${prefix}_${rand.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+}
+
+function showSaveError(kind, e) {
+  console.error(`${kind} Firebase sync failed:`, e);
+  alert(`${kind} was saved on this device, but Firebase sync failed: ${e?.message || 'Please check internet/Firebase rules.'}`);
+}
+
+function renderAllLocal() {
+  populateRoleSelect();
+  renderRoles();
+  renderTasks();
+  renderDashboard();
+  renderTimeline();
+  renderJournalEntries();
+}
+
+
+// ─────────────────────────────────────────────
 // AUTH
 // ─────────────────────────────────────────────
 window.switchAuthTab = (tab) => {
@@ -855,6 +916,8 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
+    loadLocalState();
+    renderAllLocal();
     initListeners();
   } else {
     currentUser = null;
@@ -883,6 +946,7 @@ function initListeners() {
   unsubRoles = onSnapshot(collection(db, 'users', uid, 'roles'), (snap) => {
     roles = {};
     snap.forEach(d => { roles[d.id] = { id: d.id, ...d.data() }; });
+    persistLocalState();
     renderRoles();
     renderDashboard();
     populateRoleSelect();
@@ -892,6 +956,7 @@ function initListeners() {
   unsubTasks = onSnapshot(collection(db, 'users', uid, 'tasks'), (snap) => {
     tasks = {};
     snap.forEach(d => { tasks[d.id] = { id: d.id, ...d.data() }; });
+    persistLocalState();
     renderTasks();
     renderDashboard();
     renderTimeline();
@@ -901,6 +966,7 @@ function initListeners() {
   unsubJournals = onSnapshot(query(collection(db, 'users', uid, 'journals'), orderBy('createdAt', 'desc')), (snap) => {
     journals = {};
     snap.forEach(d => { journals[d.id] = { id: d.id, ...d.data() }; });
+    persistLocalState();
     renderJournalEntries();
   });
 }
@@ -1199,48 +1265,59 @@ window.openRoleModal = (id = null) => {
 
 window.saveRole = async () => {
   const saveBtn = document.querySelector('#role-modal .btn-modal-save');
+  const originalText = saveBtn ? saveBtn.textContent : '';
+  let savedId = editingRoleId;
   try {
     const name = document.getElementById('role-name')?.value.trim();
     const desc = document.getElementById('role-desc')?.value.trim() || '';
     if (!name) { alert('Please enter a role name'); return; }
-    if (!currentUser?.uid) { alert('Please login again before saving roles.'); return; }
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'SAVING ROLE...'; }
 
-    const uid = currentUser.uid;
-    const data = {
+    savedId = editingRoleId || newLocalId('role');
+    const localData = {
+      id: savedId,
       name,
       desc,
       emoji: selectedRoleEmoji || '⚔️',
       color: selectedRoleColor || '#f5c842',
-      updatedAt: serverTimestamp()
+      xp: roles[savedId]?.xp || 0,
+      level: roles[savedId]?.level || 1,
+      updatedAtLocal: new Date().toISOString(),
+      createdAtLocal: roles[savedId]?.createdAtLocal || new Date().toISOString()
     };
 
-    if (editingRoleId) {
-      await setDoc(doc(db, 'users', uid, 'roles', editingRoleId), data, { merge: true });
-      pendingSelectRoleId = roleReturnToTask ? editingRoleId : null;
-    } else {
-      const newRoleRef = await addDoc(collection(db, 'users', uid, 'roles'), {
-        ...data,
-        xp: 0,
-        level: 1,
-        createdAt: serverTimestamp()
-      });
-      pendingSelectRoleId = roleReturnToTask ? newRoleRef.id : null;
-    }
-
+    roles[savedId] = { ...(roles[savedId] || {}), ...localData };
+    pendingSelectRoleId = roleReturnToTask ? savedId : null;
+    persistLocalState();
+    renderAllLocal();
     closeModal('role-modal');
     document.getElementById('role-modal')?.classList.remove('role-from-task');
     roleReturnToTask = false;
-    populateRoleSelect();
-    renderRoles();
+    editingRoleId = null;
+
+    if (currentUser?.uid) {
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid, 'roles', savedId), {
+          name: localData.name,
+          desc: localData.desc,
+          emoji: localData.emoji,
+          color: localData.color,
+          xp: localData.xp,
+          level: localData.level,
+          updatedAt: serverTimestamp(),
+          createdAtLocal: localData.createdAtLocal
+        }, { merge: true });
+      } catch (e) { showSaveError('Role', e); }
+    }
+
     setTimeout(() => {
       if (pendingSelectRoleId && document.getElementById('task-role')) document.getElementById('task-role').value = pendingSelectRoleId;
-    }, 250);
+    }, 100);
   } catch (e) {
     console.error('Role save failed:', e);
-    alert(`Role could not be saved: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+    alert(`Role could not be saved: ${e?.message || 'Please try again.'}`);
   } finally {
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '⚔️ FORGE THIS ROLE'; }
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = originalText || '⚔️ FORGE THIS ROLE'; }
   }
 };
 
@@ -1248,12 +1325,20 @@ window.deleteRole = async (id) => {
   try {
     if (!id) return;
     if (!confirm('Delete this role? Tasks linked to it will remain.')) return;
-    if (!currentUser?.uid) { alert('Please login again before deleting roles.'); return; }
-    await deleteDoc(doc(db, 'users', currentUser.uid, 'roles', id));
+    delete roles[id];
+    Object.keys(tasks).forEach(taskId => {
+      if (tasks[taskId]?.roleId === id) tasks[taskId].roleId = null;
+    });
     if (document.getElementById('task-role')?.value === id) document.getElementById('task-role').value = '';
+    persistLocalState();
+    renderAllLocal();
+    if (currentUser?.uid) {
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'roles', id)); }
+      catch (e) { showSaveError('Role delete', e); }
+    }
   } catch (e) {
     console.error('Role delete failed:', e);
-    alert(`Role could not be deleted: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+    alert(`Role could not be deleted: ${e?.message || 'Please try again.'}`);
   }
 };
 window.openRoleModalFromTask = () => {
@@ -1395,11 +1480,16 @@ window.deleteTask = async (id) => {
   try {
     if (!id) return;
     if (!confirm('Delete this task?')) return;
-    if (!currentUser?.uid) { alert('Please login again before deleting tasks.'); return; }
-    await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id));
+    delete tasks[id];
+    persistLocalState();
+    renderAllLocal();
+    if (currentUser?.uid) {
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id)); }
+      catch (e) { showSaveError('Task delete', e); }
+    }
   } catch (e) {
     console.error('Task delete failed:', e);
-    alert(`Task could not be deleted: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+    alert(`Task could not be deleted: ${e?.message || 'Please try again.'}`);
   }
 };
 
@@ -1480,10 +1570,10 @@ window.updateRecurrenceFields = () => {
 
 window.saveTask = async () => {
   const saveBtn = document.querySelector('#task-modal .btn-modal-save');
+  const originalText = saveBtn ? saveBtn.textContent : '';
   try {
     const title = document.getElementById('task-title')?.value.trim();
     if (!title) { alert('Please enter a task name'); return; }
-    if (!currentUser?.uid) { alert('Please login again before saving tasks.'); return; }
 
     const startTime = document.getElementById('task-start-time')?.value || '';
     const endTime = document.getElementById('task-end-time')?.value || '';
@@ -1493,8 +1583,9 @@ window.saveTask = async () => {
     }
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'SAVING TASK...'; }
 
-    const uid = currentUser.uid;
-    const existingSteps = editingTaskId && tasks[editingTaskId]?.steps ? tasks[editingTaskId].steps : [];
+    const existingId = editingTaskId;
+    const taskId = existingId || newLocalId('task');
+    const existingSteps = existingId && tasks[existingId]?.steps ? tasks[existingId].steps : [];
     const steps = [...document.querySelectorAll('#steps-input-list .form-input')]
       .map((input, idx) => {
         const name = input.value.trim();
@@ -1503,9 +1594,10 @@ window.saveTask = async () => {
       })
       .filter(Boolean);
 
-    const startDate = document.getElementById('task-deadline')?.value || null;
+    const startDate = document.getElementById('task-start-date')?.value || document.getElementById('task-deadline')?.value || null;
     const recurrence = document.getElementById('task-recurrence')?.value || 'none';
-    const data = {
+    const localData = {
+      id: taskId,
       title,
       roleId: document.getElementById('task-role')?.value || null,
       xp: Number(xpValue || 10),
@@ -1520,30 +1612,47 @@ window.saveTask = async () => {
       customUnit: document.getElementById('task-custom-unit')?.value || 'days',
       customWeekdays: recurrence === 'custom' ? getCustomWeekdays() : [],
       steps,
-      updatedAt: serverTimestamp()
+      completed: tasks[taskId]?.completed || false,
+      completedAt: tasks[taskId]?.completedAt || null,
+      createdAtLocal: tasks[taskId]?.createdAtLocal || new Date().toISOString(),
+      updatedAtLocal: new Date().toISOString()
     };
 
-    if (editingTaskId) {
-      await setDoc(doc(db, 'users', uid, 'tasks', editingTaskId), data, { merge: true });
-    } else {
-      await addDoc(collection(db, 'users', uid, 'tasks'), {
-        ...data,
-        completed: false,
-        completedAt: null,
-        createdAt: serverTimestamp()
-      });
-    }
-
+    tasks[taskId] = { ...(tasks[taskId] || {}), ...localData };
+    persistLocalState();
     closeModal('task-modal');
     editingTaskId = null;
-    renderTasks();
-    renderDashboard();
-    renderTimeline();
+    renderAllLocal();
+
+    if (currentUser?.uid) {
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid, 'tasks', taskId), {
+          title: localData.title,
+          roleId: localData.roleId,
+          xp: localData.xp,
+          priority: localData.priority,
+          startDate: localData.startDate,
+          deadline: localData.deadline,
+          startTime: localData.startTime,
+          endTime: localData.endTime,
+          recurrence: localData.recurrence,
+          hourlyInterval: localData.hourlyInterval,
+          customInterval: localData.customInterval,
+          customUnit: localData.customUnit,
+          customWeekdays: localData.customWeekdays,
+          steps: localData.steps,
+          completed: localData.completed,
+          completedAt: localData.completedAt,
+          createdAtLocal: localData.createdAtLocal,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (e) { showSaveError('Task', e); }
+    }
   } catch (e) {
     console.error('Task save failed:', e);
-    alert(`Task could not be saved: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+    alert(`Task could not be saved: ${e?.message || 'Please try again.'}`);
   } finally {
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'SAVE TASK'; }
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = originalText || 'SAVE TASK'; }
   }
 };
 
@@ -1683,16 +1792,36 @@ window.toggleJournalTag = (el, tag) => {
 window.saveJournalEntry = async () => {
   const text = document.getElementById('journal-text').value.trim();
   if (!text) { alert('Please write something before saving'); return; }
-  await addDoc(collection(db, 'users', currentUser.uid, 'journals'), {
-    text, mood: selectedMood, tags: [...journalTags],
-    createdAt: serverTimestamp(),
-    date: new Date().toISOString()
-  });
+  const entryId = newLocalId('journal');
+  const entry = {
+    id: entryId,
+    text,
+    mood: selectedMood,
+    tags: [...journalTags],
+    date: new Date().toISOString(),
+    createdAtLocal: new Date().toISOString()
+  };
+  journals[entryId] = entry;
+  persistLocalState();
+  renderJournalEntries();
   document.getElementById('journal-text').value = '';
   selectedMood = '';
   journalTags = [];
   document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('sel'));
+
+  if (currentUser?.uid) {
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid, 'journals', entryId), {
+        text: entry.text,
+        mood: entry.mood,
+        tags: entry.tags,
+        date: entry.date,
+        createdAt: serverTimestamp(),
+        createdAtLocal: entry.createdAtLocal
+      }, { merge: true });
+    } catch (e) { showSaveError('Journal entry', e); }
+  }
   alert('✨ Journal entry saved!');
 };
 
