@@ -624,6 +624,28 @@ body.simple-mode .xp-pop{display:none!important;}
 #screen-roles .hero-banner{margin-bottom:18px;}
 @media (max-width:899px){.insights-body{grid-template-columns:1fr}.task-donut{width:120px;height:120px}.task-donut::after{width:74px;height:74px}.insights-metrics{grid-template-columns:1fr 1fr}.role-bar-row{grid-template-columns:92px 1fr 30px}.insights-head h3{font-size:15px;}}
 
+
+
+/* ── DISCOVER SECTION UPDATE ── */
+.discover-card{background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(255,240,178,.78));border:1px solid rgba(126,83,0,.22);border-radius:22px;padding:16px;margin:0 0 18px;box-shadow:0 12px 32px rgba(126,83,0,.14);}
+.discover-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;}
+.discover-kicker{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:1.4px;color:#8a5a00;text-transform:uppercase;}
+.discover-head h3{font-family:'Cinzel',serif;font-size:16px;color:#2b1a00;margin-top:2px;letter-spacing:.8px;}
+.discover-head p{font-size:12px;color:#7b5b00;margin-top:3px;}
+.discover-refresh{white-space:nowrap;border-radius:999px!important;padding:8px 14px!important;}
+.discover-controls{display:none;align-items:center;gap:10px;margin:8px 0 12px;background:rgba(255,255,255,.55);border:1px solid rgba(126,83,0,.14);border-radius:14px;padding:10px 12px;}
+.discover-controls label{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:900;letter-spacing:.8px;color:#6b4700;text-transform:uppercase;white-space:nowrap;}
+.discover-controls input{width:100%;accent-color:#b87600;}
+.discover-status{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#7b5b00;letter-spacing:.4px;margin:8px 0;}
+.discover-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.discover-article{display:flex;flex-direction:column;gap:8px;min-height:160px;background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,250,222,.72));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:13px;box-shadow:0 8px 20px rgba(126,83,0,.08);color:#2b1a00;text-decoration:none;transition:transform .18s, box-shadow .18s;}
+.discover-article:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(126,83,0,.14);}
+.discover-date{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:.8px;color:#8a5a00;text-transform:uppercase;}
+.discover-title{font-family:'Cinzel',serif;font-size:15px;font-weight:900;line-height:1.25;color:#2b1a00;}
+.discover-excerpt{font-size:var(--discover-font-size,14px);line-height:1.45;color:#4a3300;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+.discover-source{margin-top:auto;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:.9px;color:#6b4700;text-transform:uppercase;}
+@media (max-width:899px){.discover-list{grid-template-columns:1fr}.discover-controls{display:flex}.discover-head{flex-direction:column}.discover-refresh{width:100%;justify-content:center}.discover-title{font-size:15px}.discover-article{min-height:auto}}
+
 </style>
 </head>
 <body>
@@ -681,38 +703,6 @@ body.simple-mode .xp-pop{display:none!important;}
     <div class="screen active" id="screen-dashboard">
       <div style="padding:0 0 8px;">
 
-        <!-- Stats Grid -->
-        <div class="stats-grid gamified">
-          <div class="stat-card">
-            <div class="stat-val" id="stat-tasks">0</div>
-            <div class="stat-lbl">Tasks Done</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="stat-roles">0</div>
-            <div class="stat-lbl">Life Roles</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="stat-streak">0🔥</div>
-            <div class="stat-lbl">Day Streak</div>
-          </div>
-        </div>
-
-        <!-- Pending / Overdue Status Cards -->
-        <div class="status-grid" id="dashboard-status-grid">
-          <div class="status-card pending" onclick="openTaskStatus('pending_week')">
-            <div class="status-value" id="stat-pending">0</div>
-            <div class="status-label">Pending This Week</div>
-          </div>
-          <div class="status-card overdue" onclick="openTaskStatus('overdue_week')">
-            <div class="status-value" id="stat-overdue">0</div>
-            <div class="status-label">Overdue This Week</div>
-          </div>
-          <div class="status-card completed" onclick="openTaskStatus('completed')">
-            <div class="status-value" id="stat-completed">0</div>
-            <div class="status-label">Completed</div>
-          </div>
-        </div>
-
         <!-- Command Analytics -->
         <div class="insights-card" id="hq-insights-card">
           <div class="insights-head">
@@ -735,6 +725,41 @@ body.simple-mode .xp-pop{display:none!important;}
             </div>
           </div>
           <div class="role-distribution" id="role-distribution"></div>
+        </div>
+
+        <!-- Discover: The Daily Brief by Zerodha -->
+        <div class="discover-card" id="discover-card">
+          <div class="discover-head">
+            <div>
+              <div class="discover-kicker">DISCOVER</div>
+              <h3>The Daily Brief by Zerodha</h3>
+              <p>Latest market explainers and business stories</p>
+            </div>
+            <button class="btn-add discover-refresh" onclick="refreshDiscoverArticles()">↻ Refresh</button>
+          </div>
+          <div class="discover-controls">
+            <label for="discover-font-slider">Mobile text size</label>
+            <input type="range" id="discover-font-slider" min="12" max="20" value="14" oninput="setDiscoverFontSize(this.value)">
+          </div>
+          <div id="discover-status" class="discover-status">Press Refresh to load the latest articles.</div>
+          <div class="discover-list" id="discover-list"></div>
+        </div>
+
+
+        <!-- Pending / Overdue Status Cards -->
+        <div class="status-grid" id="dashboard-status-grid">
+          <div class="status-card pending" onclick="openTaskStatus('pending_week')">
+            <div class="status-value" id="stat-pending">0</div>
+            <div class="status-label">Pending This Week</div>
+          </div>
+          <div class="status-card overdue" onclick="openTaskStatus('overdue_week')">
+            <div class="status-value" id="stat-overdue">0</div>
+            <div class="status-label">Overdue This Week</div>
+          </div>
+          <div class="status-card completed" onclick="openTaskStatus('completed')">
+            <div class="status-value" id="stat-completed">0</div>
+            <div class="status-label">Completed</div>
+          </div>
         </div>
 
         <!-- All Pending / Overdue Overview -->
@@ -1746,8 +1771,10 @@ function renderDashboard() {
     if (!t.completedAt) return false;
     return new Date(t.completedAt).toDateString() === new Date().toDateString();
   }).length;
-  document.getElementById('stat-tasks').textContent = completedToday;
-  document.getElementById('stat-roles').textContent = Object.keys(roles).length;
+  const statTasks = document.getElementById('stat-tasks');
+  if (statTasks) statTasks.textContent = completedToday;
+  const statRoles = document.getElementById('stat-roles');
+  if (statRoles) statRoles.textContent = Object.keys(roles).length;
   const pendingCount = Object.values(tasks).filter(t => taskIsPendingThisWeek(t)).length;
   const overdueCount = Object.values(tasks).filter(t => taskIsOverdueThisWeek(t)).length;
   const completedCount = Object.values(tasks).filter(t => t.completed).length;
@@ -1759,7 +1786,8 @@ function renderDashboard() {
   if (completedEl) completedEl.textContent = completedCount;
 
   const streak = userData.streak || 0;
-  document.getElementById('stat-streak').textContent = streak + '🔥';
+  const statStreak = document.getElementById('stat-streak');
+  if (statStreak) statStreak.textContent = streak + '🔥';
   if (streak > 0) {
     document.getElementById('streak-title').textContent = `${streak}-DAY STREAK!`;
     document.getElementById('streak-desc').textContent = streak === 1 ? 'Great start! Keep it going!' : `${streak} days strong. Don't break the chain!`;
@@ -2675,6 +2703,102 @@ function renderJournalEntries() {
     </div>`;
   }).join('');
 }
+
+
+// ─────────────────────────────────────────────
+// DISCOVER - THE DAILY BRIEF BY ZERODHA
+// ─────────────────────────────────────────────
+const DAILY_BRIEF_FEED = 'https://thedailybrief.zerodha.com/feed';
+const DAILY_BRIEF_HOME = 'https://thedailybrief.zerodha.com/';
+
+function stripHtml(value) {
+  const div = document.createElement('div');
+  div.innerHTML = value || '';
+  return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+function formatDiscoverDate(value) {
+  const d = value ? new Date(value) : null;
+  if (!d || Number.isNaN(d.getTime())) return 'Latest';
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function setDiscoverStatus(message) {
+  const el = document.getElementById('discover-status');
+  if (el) el.textContent = message || '';
+}
+
+function renderDiscoverArticles(items) {
+  const list = document.getElementById('discover-list');
+  if (!list) return;
+  if (!items || !items.length) {
+    list.innerHTML = `<div class="hq-list-note">No articles loaded yet. Tap Refresh.</div>`;
+    return;
+  }
+  list.innerHTML = items.slice(0, 3).map(item => {
+    const title = escHtml(item.title || 'Untitled article');
+    const link = item.link || DAILY_BRIEF_HOME;
+    const date = escHtml(formatDiscoverDate(item.pubDate));
+    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 260));
+    return `<a class="discover-article" href="${escHtml(link)}" target="_blank" rel="noopener noreferrer">
+      <div class="discover-date">${date}</div>
+      <div class="discover-title">${title}</div>
+      <div class="discover-excerpt">${excerpt || 'Open the article to read the latest Daily Brief story.'}</div>
+      <div class="discover-source">Read on The Daily Brief →</div>
+    </a>`;
+  }).join('');
+}
+
+async function fetchDiscoverFeed() {
+  const direct = DAILY_BRIEF_FEED;
+  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(DAILY_BRIEF_FEED)}`;
+  let lastErr;
+  for (const url of [direct, proxy]) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      if (!text || !text.includes('<')) throw new Error('Invalid feed response');
+      return text;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('Could not load feed');
+}
+
+window.refreshDiscoverArticles = async () => {
+  setDiscoverStatus('Loading latest articles...');
+  try {
+    const xmlText = await fetchDiscoverFeed();
+    const docXml = new DOMParser().parseFromString(xmlText, 'application/xml');
+    const entries = Array.from(docXml.querySelectorAll('item, entry')).slice(0, 3).map(node => ({
+      title: node.querySelector('title')?.textContent?.trim() || '',
+      link: node.querySelector('link')?.getAttribute('href') || node.querySelector('link')?.textContent?.trim() || '',
+      pubDate: node.querySelector('pubDate, published, updated')?.textContent?.trim() || '',
+      description: node.querySelector('description, summary, content')?.textContent || ''
+    }));
+    renderDiscoverArticles(entries);
+    setDiscoverStatus(entries.length ? 'Latest 3 articles loaded.' : 'No recent articles found in the feed.');
+  } catch (e) {
+    renderDiscoverArticles([]);
+    setDiscoverStatus('Unable to refresh automatically. Open The Daily Brief website from any article card or try again later.');
+  }
+};
+
+window.setDiscoverFontSize = (value) => {
+  const size = Math.max(12, Math.min(20, Number(value) || 14));
+  document.documentElement.style.setProperty('--discover-font-size', `${size}px`);
+  localStorage.setItem('cc_discover_font_size', String(size));
+};
+
+function initDiscoverSection() {
+  const saved = localStorage.getItem('cc_discover_font_size') || '14';
+  const slider = document.getElementById('discover-font-slider');
+  if (slider) slider.value = saved;
+  setDiscoverFontSize(saved);
+  renderDiscoverArticles([]);
+}
+
+initDiscoverSection();
 
 // ─────────────────────────────────────────────
 // MODALS
