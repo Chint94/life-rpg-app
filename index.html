@@ -1405,6 +1405,358 @@ body.simple-mode .xp-pop{display:none!important;}
   font-size: 9px; padding: 1px 6px;
 }
 
+/* ════════════════════════════════════════════════
+   DISCOVER — THE DAILY BRIEF BY ZERODHA
+   ════════════════════════════════════════════════ */
+
+/* ── Section header row ── */
+.disc-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.disc-kicker {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.8px;
+  color: #b87600;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.disc-subtitle {
+  font-size: 12px;
+  color: #7b5b00;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+/* ── Search + Refresh row ── */
+.disc-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.disc-search {
+  flex: 1 1 140px;
+  min-width: 0;
+  background: rgba(255,253,230,0.92);
+  border: 1px solid rgba(126,83,0,0.22);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  color: #2b1a00;
+  outline: none;
+  transition: border .2s, box-shadow .2s;
+}
+.disc-search:focus {
+  border-color: #b87600;
+  box-shadow: 0 0 0 3px rgba(184,118,0,0.10);
+}
+.disc-search::placeholder { color: #9a7a28; }
+.disc-refresh-btn {
+  flex-shrink: 0;
+  background: linear-gradient(135deg,#ffd84a,#b87600);
+  color: #201100;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(126,83,0,0.18);
+  transition: opacity .18s, transform .15s;
+}
+.disc-refresh-btn:hover { opacity: .88; }
+.disc-refresh-btn:active { transform: scale(.97); }
+.disc-refresh-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Status line ── */
+.disc-status {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7b5b00;
+  letter-spacing: 0.4px;
+  min-height: 16px;
+  margin-bottom: 10px;
+}
+
+/* ── Font size control ── */
+.disc-font-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,248,196,0.65);
+  border: 1px solid rgba(126,83,0,0.16);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.disc-font-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.9px;
+  color: #7b5b00;
+  text-transform: uppercase;
+  white-space: nowrap;
+  margin-right: 2px;
+}
+.disc-font-a {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  color: #7b5b00;
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s;
+  flex-shrink: 0;
+}
+.disc-font-a:hover { color: #b87600; }
+.disc-font-small { font-size: 12px; }
+.disc-font-large { font-size: 18px; }
+.disc-font-slider {
+  flex: 1;
+  min-width: 60px;
+  accent-color: #b87600;
+  cursor: pointer;
+}
+.disc-font-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  color: #7b5b00;
+  white-space: nowrap;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* ── Article card ── */
+.disc-article-card {
+  background: linear-gradient(145deg,rgba(255,255,255,0.93),rgba(255,241,172,0.80));
+  border: 1px solid rgba(126,83,0,0.18);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(126,83,0,0.10);
+  transition: box-shadow .18s;
+}
+.disc-article-card:hover { box-shadow: 0 10px 28px rgba(126,83,0,0.16); }
+
+/* Collapsed summary row */
+.disc-article-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.disc-article-info { flex: 1; min-width: 0; }
+.disc-article-date {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  color: #b87600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.disc-article-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2b1a00;
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+  margin-bottom: 5px;
+}
+.disc-article-excerpt {
+  font-size: 12px;
+  color: #5b3c00;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.disc-expand-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,216,74,0.28);
+  border: 1px solid rgba(126,83,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #7b5b00;
+  transition: background .18s, transform .25s;
+  margin-top: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.disc-article-card.open .disc-expand-btn {
+  transform: rotate(180deg);
+  background: rgba(255,216,74,0.50);
+}
+
+/* Full article reader */
+.disc-article-body {
+  display: none;
+  padding: 0 16px 16px;
+  border-top: 1px solid rgba(126,83,0,0.12);
+}
+.disc-article-card.open .disc-article-body { display: block; }
+.disc-article-body-inner {
+  font-family: 'Exo 2', sans-serif;
+  font-size: var(--disc-font-size, 17px);
+  color: #2b1a00;
+  line-height: 1.75;
+  padding-top: 14px;
+}
+.disc-article-body-inner p  { margin: 0 0 12px; }
+.disc-article-body-inner h1,
+.disc-article-body-inner h2,
+.disc-article-body-inner h3 {
+  font-family: 'Cinzel', serif;
+  color: #2b1a00;
+  margin: 16px 0 8px;
+  line-height: 1.25;
+}
+.disc-article-body-inner h2 { font-size: 16px; }
+.disc-article-body-inner h3 { font-size: 14px; }
+.disc-article-body-inner img {
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 10px 0;
+}
+.disc-article-body-inner a {
+  color: #7a4d00;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.disc-article-body-inner blockquote {
+  border-left: 3px solid #b87600;
+  padding: 6px 12px;
+  margin: 10px 0;
+  background: rgba(255,216,74,0.10);
+  border-radius: 0 8px 8px 0;
+  color: #5b3c00;
+  font-style: italic;
+}
+.disc-article-body-inner ul,
+.disc-article-body-inner ol {
+  padding-left: 20px;
+  margin: 8px 0 12px;
+}
+.disc-article-body-inner li { margin-bottom: 4px; }
+
+/* Loading skeleton */
+.disc-skeleton {
+  background: linear-gradient(145deg,rgba(255,255,255,0.80),rgba(255,241,172,0.60));
+  border: 1px solid rgba(126,83,0,0.12);
+  border-radius: 18px;
+  padding: 14px;
+  animation: discPulse 1.4s ease-in-out infinite;
+}
+.disc-skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(126,83,0,0.10);
+  margin-bottom: 8px;
+}
+@keyframes discPulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+
+/* Open original link */
+.disc-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg,#ffd84a,#b87600);
+  color: #201100 !important;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(126,83,0,0.20);
+  transition: opacity .18s;
+}
+.disc-open-link:hover { opacity: .88; }
+
+/* Load more button */
+.disc-load-more-btn {
+  display: none;
+  width: 100%;
+  background: rgba(255,248,200,0.88);
+  border: 1px solid rgba(126,83,0,0.22);
+  border-radius: 12px;
+  padding: 11px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  color: #5b3c00;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background .18s, box-shadow .18s;
+}
+.disc-load-more-btn:hover {
+  background: rgba(255,216,74,0.35);
+  box-shadow: 0 3px 10px rgba(126,83,0,0.12);
+}
+
+/* Empty / error state */
+.disc-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #9a7a28;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.6px;
+}
+.disc-empty .disc-empty-icon {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 10px;
+  opacity: .6;
+}
+
+/* Body loading indicator inside expanded card */
+.disc-body-loading {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b87600;
+  letter-spacing: 0.5px;
+  padding: 10px 0 4px;
+  animation: discPulse 1.4s ease-in-out infinite;
+}
+
+@media (max-width: 899px) {
+  .disc-font-control { gap: 6px; padding: 7px 10px; }
+  .disc-article-title { font-size: 13px; }
+}
+
 </style>
 </head>
 <body>
@@ -1678,6 +2030,51 @@ body.simple-mode .xp-pop{display:none!important;}
     </div>
 
 
+    <!-- DISCOVER — THE DAILY BRIEF BY ZERODHA -->
+    <div class="screen" id="screen-discover">
+      <!-- Header -->
+      <div class="section-hdr" style="margin-top:16px;">
+        <span class="section-title">DISCOVER</span>
+      </div>
+
+      <div class="disc-header-row">
+        <div>
+          <div class="disc-kicker">THE DAILY BRIEF BY ZERODHA</div>
+          <div class="disc-subtitle">All articles — fully readable inside Command Centre.</div>
+        </div>
+      </div>
+
+      <!-- Search + Refresh -->
+      <div class="disc-controls">
+        <input id="discSearchInp" type="text" class="disc-search" placeholder="Search articles…" oninput="discOnSearch()" />
+        <button id="discRefreshBtn" class="disc-refresh-btn" onclick="discRefresh()">↻ REFRESH</button>
+      </div>
+
+      <!-- Status line -->
+      <div id="discStatus" class="disc-status"></div>
+
+      <!-- Font size control -->
+      <div class="disc-font-control" id="discFontControl">
+        <span class="disc-font-label">Text Size</span>
+        <span class="disc-font-a disc-font-small" onclick="discAdjustFont(-1)" title="Smaller">A−</span>
+        <input id="discFontSlider" class="disc-font-slider" type="range" min="13" max="22" step="1" value="17"
+               oninput="discSetFont(+this.value)" aria-label="Adjust article font size" />
+        <span class="disc-font-a disc-font-large" onclick="discAdjustFont(+1)" title="Larger">A+</span>
+        <span id="discFontValue" class="disc-font-value">17px</span>
+      </div>
+
+      <!-- Article feed -->
+      <div id="discFeed" style="display:flex;flex-direction:column;gap:12px;"></div>
+
+      <!-- Load more -->
+      <div style="text-align:center;margin-top:14px;margin-bottom:8px;">
+        <button id="discLoadMore" class="disc-load-more-btn" onclick="discLoadMore()">
+          Load more articles
+        </button>
+      </div>
+    </div>
+
+
     <!-- SETTINGS -->
     <div class="screen" id="screen-settings">
       <div class="section-hdr" style="margin-top:16px;">
@@ -1792,7 +2189,10 @@ body.simple-mode .xp-pop{display:none!important;}
       <span class="nav-icon">◎</span>
       <span class="nav-label">Roles</span>
     </div>
-
+    <div class="nav-item" data-screen="discover" onclick="switchScreen('discover',this)">
+      <span class="nav-icon">📰</span>
+      <span class="nav-label">Discover</span>
+    </div>
     <div class="nav-item" data-screen="settings" onclick="switchScreen('settings',this)">
       <span class="nav-icon">⚙</span>
       <span class="nav-label">Settings</span>
@@ -2252,10 +2652,11 @@ window.switchScreen = (name, navEl) => {
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
   document.getElementById('main-content').scrollTop = 0;
-  const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', settings: '⚙ SETTINGS & GUIDE' };
+  const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', discover: '📰 DISCOVER', settings: '⚙ SETTINGS & GUIDE' };
   document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
   if (name === 'tasks') renderTasks();
+  if (name === 'discover') discInit();
 };
 
 
@@ -4191,6 +4592,325 @@ window.gcalSync = async () => {
     if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = '↓ PULL EVENTS AS TASKS'; }
   }
 };
+
+// ═══════════════════════════════════════════════════════════════
+// DISCOVER — THE DAILY BRIEF BY ZERODHA
+// Fetches the RSS feed via CORS proxy, parses articles, renders
+// them as expandable cards with full-article lazy loading.
+// ═══════════════════════════════════════════════════════════════
+
+const DISC_FEED_URL   = 'https://thedailybrief.zerodha.com/feed';
+const DISC_HOME_URL   = 'https://thedailybrief.zerodha.com/';
+const DISC_PAGE_SIZE  = 5;   // articles shown per page
+const DISC_PROXIES    = [
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => u   // direct last-resort
+];
+
+let discAllItems    = [];   // all parsed feed items
+let discFiltered    = [];   // after search filter
+let discPage        = 0;    // how many pages loaded
+let discInitialised = false;
+let discFontSize    = parseInt(localStorage.getItem('cc_disc_font') || '17', 10);
+
+// ── Helpers ───────────────────────────────────────────────────
+
+function discSetStatus(msg) {
+  const el = document.getElementById('discStatus');
+  if (el) el.textContent = msg || '';
+}
+
+function discSetFont(size) {
+  discFontSize = Math.max(13, Math.min(22, size));
+  document.documentElement.style.setProperty('--disc-font-size', discFontSize + 'px');
+  const slider = document.getElementById('discFontSlider');
+  const label  = document.getElementById('discFontValue');
+  if (slider) slider.value = discFontSize;
+  if (label)  label.textContent = discFontSize + 'px';
+  localStorage.setItem('cc_disc_font', String(discFontSize));
+}
+
+function discAdjustFont(delta) {
+  discSetFont(discFontSize + delta);
+}
+
+// ── CORS-resilient fetch — races two proxies, takes first ─────
+
+async function discFetch(url, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const attempts = DISC_PROXIES.map(async (proxy) => {
+    const res = await fetch(proxy(url), { cache: 'no-store', signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || text.length < 200) throw new Error('Empty response');
+    return text;
+  });
+  try {
+    const result = await Promise.any(attempts);
+    clearTimeout(timer);
+    return result;
+  } catch (e) {
+    clearTimeout(timer);
+    throw new Error('All proxies failed or timed out');
+  }
+}
+
+// ── Strip dangerous tags, keep readable content ───────────────
+
+function discCleanHtml(raw) {
+  const div = document.createElement('div');
+  div.innerHTML = raw || '';
+  div.querySelectorAll('script,style,iframe,form,button,input,noscript,svg,nav,header,footer').forEach(el => el.remove());
+  div.querySelectorAll('*').forEach(el => {
+    [...el.attributes].forEach(attr => {
+      const n = attr.name.toLowerCase();
+      if (n.startsWith('on') || n === 'style' || n === 'srcset') el.removeAttribute(attr.name);
+    });
+    if (el.tagName === 'A') {
+      el.setAttribute('target', '_blank');
+      el.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+  return div.innerHTML.trim() || '<p>Could not load article body.</p>';
+}
+
+function discStripHtml(html) {
+  const d = document.createElement('div');
+  d.innerHTML = html || '';
+  return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+// ── Extract best content block from a full page ───────────────
+
+function discExtractBody(pageHtml) {
+  const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
+  doc.querySelectorAll('script,style,nav,header,footer,iframe,form,button,input,noscript').forEach(el => el.remove());
+  const selectors = [
+    '.gh-content', 'article .post-content', 'article .entry-content',
+    'article .content', 'article', '[class*="post-content"]',
+    '[class*="entry-content"]', 'main'
+  ];
+  let best = null, bestLen = 0;
+  for (const sel of selectors) {
+    const el = doc.querySelector(sel);
+    if (!el) continue;
+    const len = discStripHtml(el.innerHTML).length;
+    if (len > bestLen) { best = el; bestLen = len; }
+  }
+  return best ? discCleanHtml(best.innerHTML) : '';
+}
+
+// ── Parse RSS feed XML ────────────────────────────────────────
+
+function discParseXml(xmlText) {
+  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const items = Array.from(doc.querySelectorAll('item, entry'));
+  return items.map(node => {
+    const getText = (...names) => {
+      for (const n of names) {
+        const el = node.getElementsByTagName(n)[0] || node.querySelector(n);
+        if (el?.textContent?.trim()) return el.textContent.trim();
+      }
+      return '';
+    };
+    const link = node.querySelector('link')?.getAttribute('href')
+              || node.querySelector('link')?.textContent?.trim()
+              || DISC_HOME_URL;
+    const rawDate = getText('pubDate','published','updated');
+    const date    = rawDate ? new Date(rawDate) : null;
+    const dateStr = date && !isNaN(date)
+      ? date.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+      : 'Latest';
+    const content    = getText('content:encoded','encoded','content');
+    const desc       = getText('description','summary');
+    const excerptSrc = content || desc;
+    const excerpt    = discStripHtml(excerptSrc).slice(0, 200);
+    return {
+      title:       getText('title') || 'Untitled',
+      link,
+      dateStr,
+      dateRaw:     date,
+      excerpt,
+      contentHtml: content || desc || '',
+      fullLoaded:  false,
+      fullHtml:    ''
+    };
+  });
+}
+
+// ── Render helpers ────────────────────────────────────────────
+
+function discEsc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function discRenderSkeletons(n = 3) {
+  return Array.from({length: n}, () => `
+    <div class="disc-skeleton">
+      <div class="disc-skeleton-line" style="width:40%;margin-bottom:10px"></div>
+      <div class="disc-skeleton-line" style="width:90%"></div>
+      <div class="disc-skeleton-line" style="width:75%"></div>
+      <div class="disc-skeleton-line" style="width:55%;margin-top:6px"></div>
+    </div>`).join('');
+}
+
+function discRenderCards(items) {
+  if (!items.length) {
+    return `<div class="disc-empty"><span class="disc-empty-icon">📭</span>No articles found.</div>`;
+  }
+  return items.map((item, i) => `
+    <div class="disc-article-card" id="disc-card-${i}" data-idx="${i}">
+      <div class="disc-article-summary" onclick="discToggleCard(${i})">
+        <div class="disc-article-info">
+          <div class="disc-article-date">${discEsc(item.dateStr)}</div>
+          <div class="disc-article-title">${discEsc(item.title)}</div>
+          <div class="disc-article-excerpt">${discEsc(item.excerpt)}</div>
+        </div>
+        <div class="disc-expand-btn">▾</div>
+      </div>
+      <div class="disc-article-body" id="disc-body-${i}">
+        <div class="disc-article-body-inner" id="disc-inner-${i}">
+          <div class="disc-body-loading">⏳ Loading full article…</div>
+        </div>
+        <a class="disc-open-link" href="${discEsc(item.link)}" target="_blank" rel="noopener noreferrer">
+          ↗ Open original article
+        </a>
+      </div>
+    </div>`).join('');
+}
+
+// ── Toggle card open/close, lazy-load full body ───────────────
+
+window.discToggleCard = async (i) => {
+  const card  = document.getElementById(`disc-card-${i}`);
+  const inner = document.getElementById(`disc-inner-${i}`);
+  if (!card) return;
+
+  const isOpen = card.classList.contains('open');
+  // Close all others
+  document.querySelectorAll('.disc-article-card.open').forEach(c => c.classList.remove('open'));
+  if (isOpen) return;  // was open — just close it
+
+  card.classList.add('open');
+
+  // Scroll card into view smoothly
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+
+  const item = discFiltered[i];
+  if (!item) return;
+
+  if (item.fullLoaded) {
+    inner.innerHTML = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
+    return;
+  }
+
+  // Try RSS content first (often complete for Ghost/Substack blogs)
+  if (item.contentHtml && discStripHtml(item.contentHtml).length > 400) {
+    item.fullHtml    = discCleanHtml(item.contentHtml);
+    item.fullLoaded  = true;
+    inner.innerHTML  = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
+    return;
+  }
+
+  // Fetch full page for short RSS excerpts
+  inner.innerHTML = `<div class="disc-body-loading">⏳ Loading full article…</div>`;
+  try {
+    const pageHtml  = await discFetch(item.link, 12000);
+    const extracted = discExtractBody(pageHtml);
+    item.fullHtml   = extracted || discCleanHtml(item.contentHtml);
+    item.fullLoaded = true;
+    inner.innerHTML = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
+  } catch (e) {
+    item.fullHtml   = discCleanHtml(item.contentHtml) || '<p>Could not load article. Please open the original link.</p>';
+    item.fullLoaded = true;
+    inner.innerHTML = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
+  }
+};
+
+// ── Render the current page of discFiltered into #discFeed ────
+
+function discRenderPage() {
+  const feed  = document.getElementById('discFeed');
+  const moreBtn = document.getElementById('discLoadMore');
+  if (!feed) return;
+
+  const end   = (discPage + 1) * DISC_PAGE_SIZE;
+  const slice = discFiltered.slice(0, end);
+
+  feed.innerHTML = discRenderCards(slice);
+
+  if (moreBtn) {
+    moreBtn.style.display = discFiltered.length > end ? 'block' : 'none';
+  }
+}
+
+window.discLoadMore = () => {
+  discPage++;
+  discRenderPage();
+};
+
+// ── Search filtering ──────────────────────────────────────────
+
+window.discOnSearch = () => {
+  const q = (document.getElementById('discSearchInp')?.value || '').toLowerCase().trim();
+  discFiltered = q
+    ? discAllItems.filter(a =>
+        a.title.toLowerCase().includes(q) ||
+        a.excerpt.toLowerCase().includes(q))
+    : [...discAllItems];
+  discPage = 0;
+  discRenderPage();
+  discSetStatus(q
+    ? `${discFiltered.length} article${discFiltered.length !== 1 ? 's' : ''} matched "${q}"`
+    : `${discAllItems.length} articles loaded.`);
+};
+
+// ── Refresh: re-fetch feed ────────────────────────────────────
+
+window.discRefresh = async (silent = false) => {
+  const btn = document.getElementById('discRefreshBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+  if (!silent) {
+    discSetStatus('Fetching latest articles from The Daily Brief…');
+    const feed = document.getElementById('discFeed');
+    if (feed) feed.innerHTML = discRenderSkeletons(3);
+  }
+  const moreBtn = document.getElementById('discLoadMore');
+  if (moreBtn) moreBtn.style.display = 'none';
+
+  try {
+    const xmlText = await discFetch(DISC_FEED_URL, 12000);
+    if (!xmlText.includes('<')) throw new Error('Invalid feed response');
+    discAllItems = discParseXml(xmlText);
+    discFiltered = [...discAllItems];
+    discPage     = 0;
+    discRenderPage();
+    discSetStatus(`${discAllItems.length} articles loaded.`);
+  } catch (e) {
+    const feed = document.getElementById('discFeed');
+    if (feed) feed.innerHTML = `<div class="disc-empty">
+      <span class="disc-empty-icon">⚠️</span>
+      Could not load feed. Check your internet connection and try again.
+    </div>`;
+    discSetStatus('Refresh failed. Tap ↻ REFRESH to try again.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ REFRESH'; }
+  }
+};
+
+// ── Init (called once when screen is first opened) ────────────
+
+function discInit() {
+  // Apply saved font size
+  discSetFont(discFontSize);
+
+  if (discInitialised) return;   // already loaded — don't re-fetch
+  discInitialised = true;
+
+  discRefresh(false);
+}
 
 </script>
 </body>
