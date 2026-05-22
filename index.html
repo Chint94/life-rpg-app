@@ -566,6 +566,34 @@ body.simple-mode .xp-pop{display:none!important;}
 .section-title{font-weight:900!important;letter-spacing:1.7px!important;}
 @media (min-width:900px){.hq-task-overview{grid-template-columns:1fr 1fr;}.hq-list-section .task-mini{margin-bottom:0;}}
 
+
+/* ── SETTINGS SIMPLE MODE + PROFESSIONAL ICON UPDATE ── */
+.header-user{gap:10px;}
+.settings-toggle-card{padding:16px 18px!important;}
+.settings-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:18px;}
+.settings-toggle-row h3{margin-bottom:6px!important;}
+.settings-switch{flex:0 0 auto;}
+#top-header .simple-toggle{display:none!important;}
+.nav-item .nav-icon{
+  font-family:'Rajdhani',sans-serif!important;
+  font-weight:900!important;
+  font-size:20px!important;
+  color:#5b3c00!important;
+}
+.nav-item.active .nav-icon{color:#201100!important;}
+.header-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:'Rajdhani',sans-serif!important;
+  font-weight:900!important;
+  letter-spacing:1.8px!important;
+}
+@media (max-width:899px){
+  .settings-toggle-row{align-items:flex-start;}
+  .settings-toggle-row p{padding-right:6px;}
+}
+
 </style>
 </head>
 <body>
@@ -609,12 +637,8 @@ body.simple-mode .xp-pop{display:none!important;}
 <div id="app" class="hidden">
   <!-- TOP HEADER -->
   <div id="top-header">
-    <span class="header-title" id="screen-title">🏠 HEADQUARTERS</span>
+    <span class="header-title" id="screen-title">⌂ HEADQUARTERS</span>
     <div class="header-user">
-      <div class="simple-toggle" title="Simple Mode hides XP and gamified sections">
-        <span class="simple-toggle-label">SIMPLE</span>
-        <label class="switch"><input type="checkbox" id="simple-mode-toggle" onchange="toggleSimpleMode(this.checked)"><span class="slider"></span></label>
-      </div>
       <div class="user-avatar" id="user-avatar">🧙</div>
       <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
     </div>
@@ -871,9 +895,17 @@ body.simple-mode .xp-pop{display:none!important;}
         <h3>🔁 Recurrence</h3>
         <p>Daily, weekly, monthly, hourly, and custom recurrence are supported. Weekly recurrence can repeat on selected weekdays from Monday to Sunday. Custom recurrence can repeat by interval or by selected weekdays.</p>
       </div>
-      <div class="settings-card">
-        <h3>✨ Simple Mode</h3>
-        <p>Simple Mode hides XP, levels, streaks, and gamified visuals. Your tasks, roles, timeline, journal, and settings remain available.</p>
+      <div class="settings-card settings-toggle-card">
+        <div class="settings-toggle-row">
+          <div>
+            <h3>⚙ Simple Mode</h3>
+            <p>Simple Mode hides XP, levels, streaks, and gamified visuals. Your tasks, roles, timeline, journal, and settings remain available.</p>
+          </div>
+          <label class="switch settings-switch" title="Simple Mode">
+            <input type="checkbox" id="simple-mode-toggle" onchange="toggleSimpleMode(this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
       <div class="settings-card">
         <h3>☁️ Sync</h3>
@@ -1331,7 +1363,7 @@ window.switchScreen = (name, navEl) => {
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
   document.getElementById('main-content').scrollTop = 0;
-  const titles = { dashboard: '🏠 HEADQUARTERS', tasks: '✅ TASK MANAGEMENT', timeline: '⏱️ DAILY TIMELINE', journal: '📓 REFLECTION JOURNAL', roles: '🎭 ROLES & RESPONSIBILITIES', settings: '⚙️ SETTINGS & GUIDE' };
+  const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', settings: '⚙ SETTINGS & GUIDE' };
   document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
   if (name === 'tasks') renderTasks();
