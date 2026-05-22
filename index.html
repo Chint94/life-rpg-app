@@ -481,6 +481,9 @@ body.simple-mode .xp-pop{display:none!important;}
 .hero-custom-input{background:#fff9dc;border:1px solid rgba(126,83,0,.25);border-radius:999px;padding:8px 12px;color:#2b1a00;font-family:'Rajdhani',sans-serif;font-weight:800;letter-spacing:.5px;outline:none;min-width:118px;max-width:160px;}
 .btn-modal-delete{width:100%;background:linear-gradient(135deg,#b42318,#7f1d1d);border:none;border-radius:12px;padding:13px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:900;font-size:14px;letter-spacing:1.4px;cursor:pointer;margin-top:8px;transition:all .2s;}
 .btn-modal-delete:active{transform:scale(.98);}
+/* Spawned child task — next occurrence card */
+.task-card.spawned-child{border-style:dashed !important;opacity:0.88;}
+.task-card.spawned-child .task-title::before{content:'';}
 
 /* ── RECURRENCE CHOICE MODAL ── */
 #recur-delete-modal,#recur-repeat-modal{
@@ -3742,12 +3745,19 @@ function renderTasks() {
   let arr = Object.values(tasks);
   if (taskFilter === 'pending') arr = arr.filter(t => isTaskPending(t));
   else if (taskFilter === 'pending_week') arr = arr.filter(t => taskIsPendingThisWeek(t));
-  else if (taskFilter === 'completed') arr = arr.filter(t => t.completed);
+  else if (taskFilter === 'completed') arr = arr.filter(t => {
+    if (t.parentRecurId) return !!t.completed; // child: use global flag
+    const isRecurring = t.recurrence && t.recurrence !== 'none';
+    return isRecurring ? isOccurrenceComplete(t, new Date()) : !!t.completed;
+  });
   else if (taskFilter === 'overdue') arr = arr.filter(t => isTaskOverdue(t));
   else if (taskFilter === 'overdue_week') arr = arr.filter(t => taskIsOverdueThisWeek(t));
 
   arr.sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    // Sort by deadline/startDate first, then time, then priority
+    const aDate = a.deadline || a.startDate || '';
+    const bDate = b.deadline || b.startDate || '';
+    if (aDate !== bDate) return aDate < bDate ? -1 : 1;
     const aTime = timeToMinutes(a.startTime) ?? 9999;
     const bTime = timeToMinutes(b.startTime) ?? 9999;
     if (aTime !== bTime) return aTime - bTime;
@@ -3770,12 +3780,16 @@ function buildTaskCardHTML(t) {
   const todayStr = today.toISOString().slice(0, 10);
 
   const isRecurring = t.recurrence && t.recurrence !== 'none';
-  // For display: use per-occurrence done state for recurring, global for one-time
-  const isDoneToday = isRecurring ? isOccurrenceComplete(t, today) : !!t.completed;
+  const isSpawnedChild = !!t.parentRecurId; // child task spawned from a completed recurrence
+
+  // For display: per-occurrence done state for recurring parent, global for one-time / child
+  const isDoneToday = isRecurring && !isSpawnedChild
+    ? isOccurrenceComplete(t, today)
+    : !!t.completed;
 
   let deadlineHTML = '';
   if (t.deadline) {
-    const d = new Date(t.deadline);
+    const d = new Date(t.deadline + 'T00:00:00');
     const diff = Math.floor((d - today) / 86400000);
     const cls = diff < 0 ? 'overdue' : diff <= 2 ? 'soon' : 'ok';
     const label = diff < 0 ? `${Math.abs(diff)}d overdue` : diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : `${diff}d left`;
@@ -3783,25 +3797,35 @@ function buildTaskCardHTML(t) {
   }
   const notesHTML = t.notes ? `<div class="task-notes-preview"><div class="task-notes-preview-title">Notes</div>${escHtml(t.notes)}</div>` : '';
 
-  // Completed-dates count badge for recurring
-  const doneCount = isRecurring ? (t.completedDates || []).length : 0;
-  const doneCountBadge = isRecurring && doneCount > 0
+  // Completed-dates count badge — only on recurring parents
+  const doneCount = (isRecurring && !isSpawnedChild) ? (t.completedDates || []).length : 0;
+  const doneCountBadge = doneCount > 0
     ? `<span style="font-size:10px;color:var(--green);font-family:'Rajdhani',sans-serif">✅ ${doneCount} done</span>`
     : '';
 
-  // Show "Repeat Series" badge when recurring and all series done / past end
+  // "Next occurrence" label on spawned children
+  const nextOccurrenceBadge = isSpawnedChild
+    ? `<span style="font-size:10px;color:var(--purple);font-family:'Rajdhani',sans-serif;background:var(--purple-glow);padding:2px 7px;border-radius:6px;">⏭ Next occurrence</span>`
+    : '';
+
+  // Recurrence label — show on recurring parents, not on children (they display the next-occurrence badge instead)
+  const recurBadge = (isRecurring && !isSpawnedChild && recurrenceLabel(t))
+    ? `<span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif">🔄 ${recurrenceLabel(t)}</span>`
+    : '';
+
+  // "Repeat Series" badge — only on recurring parents that are all done / past end
   const isPastEnd = t.recurrenceEndDate && today > startOfDay(parseDateOnly(t.recurrenceEndDate));
-  const showRepeat = isRecurring && (allOccurrencesComplete(t) || isPastEnd);
+  const showRepeat = isRecurring && !isSpawnedChild && (allOccurrencesComplete(t) || isPastEnd);
   const repeatBadge = showRepeat
     ? `<span class="repeat-series-badge" onclick="openRecurRepeatModal('${t.id}')">🔁 REPEAT SERIES</span>`
     : '';
 
-  // toggleTask call — pass dateStr for recurring
-  const toggleCall = isRecurring
+  // toggleTask call
+  const toggleCall = (isRecurring && !isSpawnedChild)
     ? `toggleTask('${t.id}',event,'${todayStr}')`
     : `toggleTask('${t.id}',event)`;
 
-  return `<div class="task-card ${isDoneToday ? 'completed' : ''}" style="border-left:3px solid ${pColors[t.priority]||'#6b7299'}">
+  return `<div class="task-card ${isDoneToday ? 'completed' : ''}${isSpawnedChild ? ' spawned-child' : ''}" style="border-left:3px solid ${pColors[t.priority]||'#6b7299'}">
     <div class="task-top">
       <div class="task-check-lg ${isDoneToday ? 'done' : ''}" onclick="${toggleCall}"></div>
       <div class="task-info">
@@ -3811,8 +3835,9 @@ function buildTaskCardHTML(t) {
           <span class="xp-badge gamified">+${t.xp} XP</span>
           ${formatTimeRange(t) ? `<span class="quest-time-badge">⏰ ${formatTimeRange(t)}</span>` : ''}
           ${deadlineHTML}
-          ${recurrenceLabel(t) ? `<span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif">🔄 ${recurrenceLabel(t)}</span>` : ''}
+          ${recurBadge}
           ${doneCountBadge}
+          ${nextOccurrenceBadge}
           ${t.gcalSynced ? `<span class="gcal-badge">📅 GCal</span>` : ''}
           ${repeatBadge}
         </div>
@@ -3839,58 +3864,117 @@ window.toggleTask = async (id, event, dateStr) => {
     const completedDates = [...(t.completedDates || [])];
     const alreadyDone = completedDates.includes(ds);
     let updatedDates;
+
     if (alreadyDone) {
+      // UN-TICK: remove from completedDates and delete any spawned child for this date
       updatedDates = completedDates.filter(d => d !== ds);
-    } else {
-      updatedDates = [...completedDates, ds];
-    }
+      tasks[id] = { ...t, completedDates: updatedDates, updatedAtLocal: new Date().toISOString() };
 
-    // On completion (not un-tick): advance startDate to next recurrence
-    let newStartDate = t.startDate || t.deadline;
-    let newDeadline  = t.deadline  || t.startDate;
-    if (!alreadyDone) {
-      const completedDay = parseDateOnly(ds);
-      const next = getNextRecurrenceDate(t, completedDay);
-      if (next) {
-        newStartDate = toDateStr(next);
-        newDeadline  = toDateStr(next);
+      // Remove any spawned child task that was created for the next date after ds
+      const childId = Object.keys(tasks).find(k =>
+        tasks[k].parentRecurId === id && tasks[k].spawnedFromDate === ds
+      );
+      if (childId) {
+        delete tasks[childId];
+        if (uid) {
+          try { await deleteDoc(doc(db, 'users', uid, 'tasks', childId)); } catch (_) {}
+        }
       }
-      // If no next date (series ended), leave startDate unchanged;
-      // allOccurrencesComplete will show the "Repeat Series" badge.
-    }
 
-    tasks[id] = {
-      ...t,
-      completedDates: updatedDates,
-      startDate:  newStartDate,
-      deadline:   newDeadline,
-      updatedAtLocal: new Date().toISOString()
-    };
-    persistLocalState();
-    renderAllLocal();
-    try {
-      if (uid) {
-        await updateDoc(doc(db, 'users', uid, 'tasks', id), {
-          completedDates: updatedDates,
-          startDate:  newStartDate,
-          deadline:   newDeadline,
-          updatedAt: serverTimestamp()
-        });
-      }
-      if (!alreadyDone) {
-        const el = event?.currentTarget;
-        await addXP(t.xp || 10, t.roleId, el);
-        await updateStreak();
-      } else {
+      persistLocalState();
+      renderAllLocal();
+      try {
+        if (uid) {
+          await updateDoc(doc(db, 'users', uid, 'tasks', id), {
+            completedDates: updatedDates,
+            updatedAt: serverTimestamp()
+          });
+        }
+        // Deduct XP
         const newTotal = Math.max(0, (userData.totalXP || 0) - (t.xp || 10));
         userData.totalXP = newTotal;
         userData.level = calcLevel(newTotal);
         persistLocalState();
         renderDashboard();
         if (uid) await setDoc(doc(db, 'users', uid), { totalXP: newTotal, level: calcLevel(newTotal) }, { merge: true });
+      } catch (e) { showSaveError('Task completion', e); }
+
+    } else {
+      // TICK: mark this occurrence done
+      updatedDates = [...completedDates, ds];
+      tasks[id] = { ...t, completedDates: updatedDates, updatedAtLocal: new Date().toISOString() };
+
+      // Spawn a new child task for the next recurrence date (if not already spawned)
+      const completedDay = parseDateOnly(ds);
+      const next = getNextRecurrenceDate(t, completedDay);
+      let childId = null;
+      if (next) {
+        const nextStr = toDateStr(next);
+        // Only spawn if no child already exists for this ds → nextStr pair
+        const existingChild = Object.values(tasks).find(k =>
+          k.parentRecurId === id && k.spawnedFromDate === ds
+        );
+        if (!existingChild) {
+          childId = newLocalId('task');
+          const child = {
+            id:               childId,
+            title:            t.title,
+            roleId:           t.roleId   || null,
+            xp:               t.xp       || 10,
+            priority:         t.priority || 'medium',
+            startDate:        nextStr,
+            deadline:         nextStr,
+            startTime:        t.startTime || null,
+            endTime:          t.endTime   || null,
+            // Carry the full recurrence config so getNextRecurrenceDate works on child too
+            recurrence:       t.recurrence,
+            hourlyInterval:   t.hourlyInterval,
+            customType:       t.customType,
+            customInterval:   t.customInterval,
+            customUnit:       t.customUnit,
+            customNth:        t.customNth,
+            weeklyWeekdays:   t.weeklyWeekdays   || [],
+            customWeekdays:   t.customWeekdays   || [],
+            intervalWeekdays: t.intervalWeekdays || [],
+            recurrenceEndDate: t.recurrenceEndDate || null,
+            notes:            t.notes   || '',
+            steps:            [],
+            completed:        false,
+            completedAt:      null,
+            completedDates:   [],
+            skippedDates:     [],
+            recurrenceHistory:[],
+            parentRecurId:    id,          // link back to parent
+            spawnedFromDate:  ds,          // which completion triggered this
+            createdAtLocal:   new Date().toISOString(),
+            updatedAtLocal:   new Date().toISOString(),
+            driveAttachments: t.driveAttachments || []
+          };
+          tasks[childId] = child;
+          if (uid) {
+            try {
+              await setDoc(doc(db, 'users', uid, 'tasks', childId), {
+                ...child,
+                updatedAt: serverTimestamp()
+              });
+            } catch (e) { showSaveError('Next recurrence task', e); }
+          }
+        }
       }
-    } catch (e) {
-      showSaveError('Task completion', e);
+
+      persistLocalState();
+      renderAllLocal();
+      try {
+        if (uid) {
+          await updateDoc(doc(db, 'users', uid, 'tasks', id), {
+            completedDates: updatedDates,
+            updatedAt: serverTimestamp()
+          });
+        }
+        const el = event?.currentTarget;
+        await addXP(t.xp || 10, t.roleId, el);
+        await updateStreak();
+      } catch (e) { showSaveError('Task completion', e); }
     }
   } else {
     // Non-recurring: global toggle (original behaviour)
@@ -4004,14 +4088,22 @@ window.recurDeleteSeries = async () => {
 
 async function _doDeleteFullTask(id) {
   try {
+    // Also delete any spawned child tasks linked to this parent
+    const childIds = Object.keys(tasks).filter(k => tasks[k].parentRecurId === id);
+    childIds.forEach(k => delete tasks[k]);
+
     delete tasks[id];
     if (editingTaskId === id) editingTaskId = null;
     closeModal('task-modal');
     persistLocalState();
     renderAllLocal();
     if (currentUser?.uid) {
-      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id)); }
-      catch (e) { showSaveError('Task delete', e); }
+      try {
+        await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id));
+        for (const cid of childIds) {
+          try { await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', cid)); } catch (_) {}
+        }
+      } catch (e) { showSaveError('Task delete', e); }
     }
   } catch (e) {
     console.error('Task delete failed:', e);
@@ -4155,6 +4247,11 @@ window.rrConfirmRepeat = async () => {
   };
 
   tasks[id] = updated;
+
+  // Remove any spawned children from the previous series period
+  const oldChildIds = Object.keys(tasks).filter(k => tasks[k].parentRecurId === id);
+  oldChildIds.forEach(k => delete tasks[k]);
+
   closeRecurRepeatModal();
   persistLocalState();
   renderAllLocal();
@@ -4183,6 +4280,10 @@ window.rrConfirmRepeat = async () => {
         recurrenceHistory: history,
         updatedAt:         serverTimestamp()
       }, { merge: true });
+      // Delete spawned children from Firestore
+      for (const cid of oldChildIds) {
+        try { await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', cid)); } catch (_) {}
+      }
     } catch (e) { showSaveError('Repeat series', e); }
   }
 };
