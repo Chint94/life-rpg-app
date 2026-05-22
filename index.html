@@ -477,6 +477,18 @@ body.simple-mode .xp-pop{display:none!important;}
   margin-bottom:14px;
 }
 
+/* ── CUSTOM HERO + TIMELINE COMPLETION UPDATE ── */
+.hero-custom-input{background:#fff9dc;border:1px solid rgba(126,83,0,.25);border-radius:999px;padding:8px 12px;color:#2b1a00;font-family:'Rajdhani',sans-serif;font-weight:800;letter-spacing:.5px;outline:none;min-width:118px;max-width:160px;}
+.btn-modal-delete{width:100%;background:linear-gradient(135deg,#b42318,#7f1d1d);border:none;border-radius:12px;padding:13px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:900;font-size:14px;letter-spacing:1.4px;cursor:pointer;margin-top:8px;transition:all .2s;}
+.btn-modal-delete:active{transform:scale(.98);}
+.status-card.completed{border-left:5px solid var(--green)!important;}
+.calendar-event-complete{position:absolute;right:7px;top:7px;width:22px;height:22px;border-radius:7px;border:2px solid rgba(126,83,0,.35);background:rgba(255,255,255,.68);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;z-index:2;cursor:pointer;}
+.calendar-event-complete.done{background:var(--green);border-color:var(--green);color:#fff;}
+.calendar-event-title{padding-right:28px;}
+.calendar-event-time{padding-right:28px;}
+@media (max-width:899px){.hero-custom-input{min-width:100%;max-width:none}.status-grid{grid-template-columns:1fr;}}
+@media (min-width:900px){.status-grid{grid-template-columns:repeat(3,1fr);}}
+
 </style>
 </head>
 <body>
@@ -559,6 +571,9 @@ body.simple-mode .xp-pop{display:none!important;}
               <option value="🦁">🦁 Leader</option>
               <option value="🌟">🌟 Hero</option>
             </select>
+            <input class="hero-custom-input" id="hero-name-input" placeholder="Hero name" aria-label="Custom hero name"/>
+            <input class="hero-custom-input" id="hero-class-input" placeholder="Class title" aria-label="Custom class title"/>
+            <button type="button" class="hero-reset-btn" onclick="saveHeroIdentity()">Save Hero</button>
             <button type="button" class="hero-reset-btn" onclick="resetHeroXP()">Reset Hero XP</button>
           </div>
           <div class="xp-section">
@@ -597,6 +612,10 @@ body.simple-mode .xp-pop{display:none!important;}
           <div class="status-card overdue" onclick="openTaskStatus('overdue')">
             <div class="status-value" id="stat-overdue">0</div>
             <div class="status-label">Overdue</div>
+          </div>
+          <div class="status-card completed" onclick="openTaskStatus('completed')">
+            <div class="status-value" id="stat-completed">0</div>
+            <div class="status-label">Completed</div>
           </div>
         </div>
 
@@ -721,7 +740,15 @@ body.simple-mode .xp-pop{display:none!important;}
       </div>
       <div class="settings-card">
         <h3>🧙 Hero & XP</h3>
-        <p>You can change your Hero emoji from the Headquarters banner. Use Reset Hero XP to bring your total Hero XP back to zero and restart from Level 1.</p>
+        <p>You can change your Hero emoji, Hero name, and class title from the Headquarters banner. Use Reset Hero XP to bring your total Hero XP back to zero and restart from Level 1.</p>
+        <ul>
+          <li>Level 1–4: Novice Adventurer</li>
+          <li>Level 5–9: Apprentice Hero</li>
+          <li>Level 10–19: Seasoned Warrior</li>
+          <li>Level 20–34: Elite Champion</li>
+          <li>Level 35–49: Legendary Hero</li>
+          <li>Level 50+: Mythic Overlord</li>
+        </ul>
       </div>
       <div class="settings-card">
         <h3>🏠 Headquarters</h3>
@@ -947,6 +974,7 @@ body.simple-mode .xp-pop{display:none!important;}
       </div>
     </div>
     <button type="button" class="btn-modal-save" onclick="saveTask()">SAVE TASK</button>
+    <button type="button" class="btn-modal-delete hidden" id="task-modal-delete" onclick="deleteEditingTask()">DELETE TASK</button>
     <button type="button" class="btn-modal-cancel" onclick="closeModal('task-modal')">CANCEL</button>
   </div>
 </div>
@@ -975,7 +1003,7 @@ const db = getFirestore(app);
 // STATE
 // ─────────────────────────────────────────────
 let currentUser = null;
-let userData = { name: 'Hero', totalXP: 0, level: 1, streak: 0, lastActiveDate: null, simpleMode: false, heroEmoji: '🧙' };
+let userData = { name: 'Hero', customHeroName: '', customHeroClass: '', totalXP: 0, level: 1, streak: 0, lastActiveDate: null, simpleMode: false, heroEmoji: '🧙' };
 let roles = {};
 let tasks = {};
 let journals = {};
@@ -1396,6 +1424,20 @@ window.saveHeroEmoji = async (emoji) => {
   }
 };
 
+window.saveHeroIdentity = async () => {
+  const customHeroName = document.getElementById('hero-name-input')?.value.trim() || '';
+  const customHeroClass = document.getElementById('hero-class-input')?.value.trim() || '';
+  userData.customHeroName = customHeroName;
+  userData.customHeroClass = customHeroClass;
+  persistLocalState();
+  renderDashboard();
+  if (currentUser) {
+    try { await setDoc(doc(db, 'users', currentUser.uid), { customHeroName, customHeroClass }, { merge: true }); }
+    catch(e) { showSaveError('Hero identity', e); }
+  }
+  alert('Hero details saved!');
+};
+
 window.resetHeroXP = async () => {
   const ok = confirm('Reset your Hero XP total to 0 and return to Level 1? Role XP will not be changed.');
   if (!ok) return;
@@ -1415,7 +1457,7 @@ window.resetHeroXP = async () => {
 function renderDashboard() {
   const uid = currentUser?.uid;
   if (!uid) return;
-  const name = userData.name || currentUser.displayName || 'Hero';
+  const name = userData.customHeroName || userData.name || currentUser.displayName || 'Hero';
   const totalXP = userData.totalXP || 0;
   const level = calcLevel(totalXP);
   const nextLevelXP = xpForNextLevel(level);
@@ -1424,13 +1466,17 @@ function renderDashboard() {
 
   const heroEmoji = userData.heroEmoji || '🧙';
   document.getElementById('dash-name').textContent = name;
-  document.getElementById('dash-class').textContent = getHeroClass(level);
+  document.getElementById('dash-class').textContent = userData.customHeroClass || getHeroClass(level);
   document.getElementById('dash-level').textContent = `LVL ${level}`;
   document.getElementById('dash-xp-text').textContent = `${totalXP} XP`;
   document.getElementById('dash-xp-bar').style.width = progress + '%';
   document.getElementById('dash-avatar').textContent = heroEmoji;
   const heroSelect = document.getElementById('hero-emoji-select');
   if (heroSelect) heroSelect.value = heroEmoji;
+  const heroNameInput = document.getElementById('hero-name-input');
+  const heroClassInput = document.getElementById('hero-class-input');
+  if (heroNameInput) heroNameInput.value = userData.customHeroName || '';
+  if (heroClassInput) heroClassInput.value = userData.customHeroClass || '';
   document.getElementById('user-avatar').textContent = heroEmoji;
 
   const completedToday = Object.values(tasks).filter(t => {
@@ -1441,10 +1487,13 @@ function renderDashboard() {
   document.getElementById('stat-roles').textContent = Object.keys(roles).length;
   const pendingCount = Object.values(tasks).filter(t => isTaskPending(t)).length;
   const overdueCount = Object.values(tasks).filter(t => isTaskOverdue(t)).length;
+  const completedCount = Object.values(tasks).filter(t => t.completed).length;
   const pendingEl = document.getElementById('stat-pending');
   const overdueEl = document.getElementById('stat-overdue');
+  const completedEl = document.getElementById('stat-completed');
   if (pendingEl) pendingEl.textContent = pendingCount;
   if (overdueEl) overdueEl.textContent = overdueCount;
+  if (completedEl) completedEl.textContent = completedCount;
 
   const streak = userData.streak || 0;
   document.getElementById('stat-streak').textContent = streak + '🔥';
@@ -1740,21 +1789,35 @@ function buildTaskCardHTML(t) {
 }
 
 window.toggleTask = async (id, event) => {
+  event?.stopPropagation?.();
   const t = tasks[id];
   if (!t) return;
-  const uid = currentUser.uid;
+  const uid = currentUser?.uid;
   const newDone = !t.completed;
-  await updateDoc(doc(db, 'users', uid, 'tasks', id), {
-    completed: newDone,
-    completedAt: newDone ? new Date().toISOString() : null
-  });
-  if (newDone) {
-    const el = event?.currentTarget;
-    await addXP(t.xp || 10, t.roleId, el);
-    await updateStreak();
-  } else {
-    const newTotal = Math.max(0, (userData.totalXP || 0) - (t.xp || 10));
-    await setDoc(doc(db, 'users', uid), { totalXP: newTotal, level: calcLevel(newTotal) }, { merge: true });
+  tasks[id] = { ...t, completed: newDone, completedAt: newDone ? new Date().toISOString() : null };
+  persistLocalState();
+  renderAllLocal();
+  try {
+    if (uid) {
+      await updateDoc(doc(db, 'users', uid, 'tasks', id), {
+        completed: newDone,
+        completedAt: newDone ? tasks[id].completedAt : null
+      });
+    }
+    if (newDone) {
+      const el = event?.currentTarget;
+      await addXP(t.xp || 10, t.roleId, el);
+      await updateStreak();
+    } else {
+      const newTotal = Math.max(0, (userData.totalXP || 0) - (t.xp || 10));
+      userData.totalXP = newTotal;
+      userData.level = calcLevel(newTotal);
+      persistLocalState();
+      renderDashboard();
+      if (uid) await setDoc(doc(db, 'users', uid), { totalXP: newTotal, level: calcLevel(newTotal) }, { merge: true });
+    }
+  } catch (e) {
+    showSaveError('Task completion', e);
   }
 };
 
@@ -1771,6 +1834,8 @@ window.deleteTask = async (id) => {
     if (!id) return;
     if (!confirm('Delete this task?')) return;
     delete tasks[id];
+    if (editingTaskId === id) editingTaskId = null;
+    closeModal('task-modal');
     persistLocalState();
     renderAllLocal();
     if (currentUser?.uid) {
@@ -1783,6 +1848,14 @@ window.deleteTask = async (id) => {
   }
 };
 
+window.deleteEditingTask = async () => {
+  if (!editingTaskId) return;
+  const id = editingTaskId;
+  closeModal('task-modal');
+  editingTaskId = null;
+  await deleteTask(id);
+};
+
 window.setTaskFilter = (f) => {
   taskFilter = f;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
@@ -1792,6 +1865,8 @@ window.setTaskFilter = (f) => {
 window.openTaskModal = (id = null) => {
   editingTaskId = id;
   document.getElementById('task-modal-title').textContent = id ? 'EDIT TASK' : 'NEW TASK';
+  const deleteBtn = document.getElementById('task-modal-delete');
+  if (deleteBtn) deleteBtn.classList.toggle('hidden', !id);
   document.getElementById('steps-input-list').innerHTML = '';
   if (id && tasks[id]) {
     const t = tasks[id];
@@ -2028,8 +2103,9 @@ function renderTimeline() {
     const roleColor = t.roleId && roles[t.roleId] ? roles[t.roleId].color : '#b87600';
     const timeText = t.occurrenceTime ? `${t.occurrenceTime} · hourly` : (formatTimeRange(t) || 'Scheduled task');
     return `<div class="calendar-event ${t.completed ? 'done' : ''}" style="top:${top}px;height:${height}px;left:${left};width:${width};border-left-color:${roleColor}" onclick="openTaskModal('${t.id}')" title="${escHtml(t.title)}">
-      <div class="calendar-event-time">${escHtml(timeText)}</div>
+      <div class="calendar-event-complete ${t.completed ? 'done' : ''}" onclick="toggleTask('${t.id}',event)">${t.completed ? '✓' : ''}</div>
       <div class="calendar-event-title">${t.completed ? '✅' : isTaskOverdue(t, isToday ? now : selected) ? '⚠️' : '●'} ${escHtml(t.title)}</div>
+      <div class="calendar-event-time">${escHtml(timeText)}</div>
     </div>`;
   }).join('');
 
