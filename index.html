@@ -1581,6 +1581,15 @@ body.simple-mode .xp-pop{display:none!important;}
   letter-spacing: 0.3px;
   margin-bottom: 5px;
 }
+.disc-article-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7b5b00;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+  font-style: italic;
+}
 .disc-article-excerpt {
   font-size: 12px;
   color: #5b3c00;
@@ -4595,30 +4604,31 @@ window.gcalSync = async () => {
 
 // ═══════════════════════════════════════════════════════════════
 // DISCOVER — THE DAILY BRIEF BY ZERODHA
-// Fetches the RSS feed via CORS proxy, parses articles, renders
-// them as expandable cards with full-article lazy loading.
+// Uses allorigins.win /get (JSON wrapper) to bypass CORS.
+// Fetches article list from Substack /api/v1/archive, then loads
+// full body_html from /api/v1/posts/{slug} on demand — no scraping.
 // ═══════════════════════════════════════════════════════════════
 
-const DISC_FEED_URL   = 'https://thedailybrief.zerodha.com/feed';
-const DISC_HOME_URL   = 'https://thedailybrief.zerodha.com/';
-const DISC_PAGE_SIZE  = 5;   // articles shown per page
-const DISC_PROXIES    = [
-  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-  u => u   // direct last-resort
-];
+const DISC_BASE        = 'https://thedailybrief.zerodha.com';
+const DISC_HOME_URL    = DISC_BASE + '/';
+const DISC_ARCHIVE_URL = DISC_BASE + '/api/v1/archive';
+const DISC_POST_URL    = (slug) => `${DISC_BASE}/api/v1/posts/${slug}`;
+const DISC_ALLORIGINS  = (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+const DISC_PAGE_SIZE   = 3;    // 3 articles shown at a time
 
-let discAllItems    = [];   // all parsed feed items
-let discFiltered    = [];   // after search filter
-let discPage        = 0;    // how many pages loaded
+let discAllItems    = [];
+let discFiltered    = [];
+let discPage        = 0;
 let discInitialised = false;
 let discFontSize    = parseInt(localStorage.getItem('cc_disc_font') || '17', 10);
 
 // ── Helpers ───────────────────────────────────────────────────
 
-function discSetStatus(msg) {
+function discSetStatus(msg, type) {
   const el = document.getElementById('discStatus');
-  if (el) el.textContent = msg || '';
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = type === 'error' ? '#b42318' : type === 'ok' ? '#167a3c' : '#7b5b00';
 }
 
 function discSetFont(size) {
@@ -4631,49 +4641,60 @@ function discSetFont(size) {
   localStorage.setItem('cc_disc_font', String(discFontSize));
 }
 
-function discAdjustFont(delta) {
-  discSetFont(discFontSize + delta);
+function discAdjustFont(delta) { discSetFont(discFontSize + delta); }
+
+function discEsc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── CORS-resilient fetch — races two proxies, takes first ─────
+// ── Fetch through allorigins /get (JSON wrapper) ─────────────
+// allorigins /get wraps the response in {"contents":"...","status":{...}}
+// This avoids all CORS issues since allorigins fetches server-side.
 
-async function discFetch(url, timeoutMs = 10000) {
+async function discFetch(url, timeoutMs = 14000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const attempts = DISC_PROXIES.map(async (proxy) => {
-    const res = await fetch(proxy(url), { cache: 'no-store', signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    if (!text || text.length < 200) throw new Error('Empty response');
-    return text;
-  });
   try {
-    const result = await Promise.any(attempts);
+    const res = await fetch(DISC_ALLORIGINS(url), {
+      cache: 'no-store',
+      signal: controller.signal
+    });
     clearTimeout(timer);
-    return result;
+    if (!res.ok) throw new Error(`allorigins HTTP ${res.status}`);
+    const wrapper = await res.json();
+    if (!wrapper.contents) throw new Error('Empty response from proxy');
+    return wrapper.contents;   // the raw text (XML or JSON string)
   } catch (e) {
     clearTimeout(timer);
-    throw new Error('All proxies failed or timed out');
+    throw e;
   }
 }
 
-// ── Strip dangerous tags, keep readable content ───────────────
+// ── Clean HTML for safe rendering ────────────────────────────
 
 function discCleanHtml(raw) {
   const div = document.createElement('div');
   div.innerHTML = raw || '';
-  div.querySelectorAll('script,style,iframe,form,button,input,noscript,svg,nav,header,footer').forEach(el => el.remove());
+  div.querySelectorAll('script,style,iframe,form,button,input,noscript,svg').forEach(el => el.remove());
   div.querySelectorAll('*').forEach(el => {
     [...el.attributes].forEach(attr => {
       const n = attr.name.toLowerCase();
-      if (n.startsWith('on') || n === 'style' || n === 'srcset') el.removeAttribute(attr.name);
+      if (n.startsWith('on') || n === 'srcset') el.removeAttribute(attr.name);
+      if (n === 'style') el.removeAttribute(attr.name);
     });
     if (el.tagName === 'A') {
       el.setAttribute('target', '_blank');
       el.setAttribute('rel', 'noopener noreferrer');
     }
+    // Make Substack images load without srcset issues
+    if (el.tagName === 'IMG') {
+      const src = el.getAttribute('src') || '';
+      if (!src) el.remove();
+    }
   });
-  return div.innerHTML.trim() || '<p>Could not load article body.</p>';
+  return div.innerHTML.trim();
 }
 
 function discStripHtml(html) {
@@ -4682,163 +4703,140 @@ function discStripHtml(html) {
   return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
 }
 
-// ── Extract best content block from a full page ───────────────
+// ── Format date ───────────────────────────────────────────────
 
-function discExtractBody(pageHtml) {
-  const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
-  doc.querySelectorAll('script,style,nav,header,footer,iframe,form,button,input,noscript').forEach(el => el.remove());
-  const selectors = [
-    '.gh-content', 'article .post-content', 'article .entry-content',
-    'article .content', 'article', '[class*="post-content"]',
-    '[class*="entry-content"]', 'main'
-  ];
-  let best = null, bestLen = 0;
-  for (const sel of selectors) {
-    const el = doc.querySelector(sel);
-    if (!el) continue;
-    const len = discStripHtml(el.innerHTML).length;
-    if (len > bestLen) { best = el; bestLen = len; }
-  }
-  return best ? discCleanHtml(best.innerHTML) : '';
+function discFormatDate(isoStr) {
+  if (!isoStr) return 'Latest';
+  const d = new Date(isoStr);
+  if (isNaN(d)) return 'Latest';
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
 }
 
-// ── Parse RSS feed XML ────────────────────────────────────────
+// ── Fetch article list from Substack archive API ─────────────
 
-function discParseXml(xmlText) {
-  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
-  const items = Array.from(doc.querySelectorAll('item, entry'));
-  return items.map(node => {
-    const getText = (...names) => {
-      for (const n of names) {
-        const el = node.getElementsByTagName(n)[0] || node.querySelector(n);
-        if (el?.textContent?.trim()) return el.textContent.trim();
-      }
-      return '';
-    };
-    const link = node.querySelector('link')?.getAttribute('href')
-              || node.querySelector('link')?.textContent?.trim()
-              || DISC_HOME_URL;
-    const rawDate = getText('pubDate','published','updated');
-    const date    = rawDate ? new Date(rawDate) : null;
-    const dateStr = date && !isNaN(date)
-      ? date.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
-      : 'Latest';
-    const content    = getText('content:encoded','encoded','content');
-    const desc       = getText('description','summary');
-    const excerptSrc = content || desc;
-    const excerpt    = discStripHtml(excerptSrc).slice(0, 200);
-    return {
-      title:       getText('title') || 'Untitled',
-      link,
-      dateStr,
-      dateRaw:     date,
-      excerpt,
-      contentHtml: content || desc || '',
-      fullLoaded:  false,
-      fullHtml:    ''
-    };
-  });
+async function discFetchList(offset = 0, limit = 12) {
+  const url  = `${DISC_ARCHIVE_URL}?limit=${limit}&offset=${offset}`;
+  const text = await discFetch(url);
+  const data = JSON.parse(text);
+  return data.map(post => ({
+    id:          post.id,
+    title:       post.title || 'Untitled',
+    slug:        post.slug,
+    subtitle:    post.subtitle || '',
+    dateStr:     discFormatDate(post.post_date),
+    dateRaw:     post.post_date,
+    link:        post.canonical_url || `${DISC_BASE}/p/${post.slug}`,
+    coverImage:  post.cover_image || null,
+    excerpt:     (post.truncated_body_text || post.subtitle || '').slice(0, 220),
+    fullLoaded:  false,
+    fullHtml:    ''
+  }));
 }
 
-// ── Render helpers ────────────────────────────────────────────
+// ── Fetch full article body via Substack post API ─────────────
 
-function discEsc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+async function discFetchBody(slug) {
+  const url  = DISC_POST_URL(slug);
+  const text = await discFetch(url, 16000);
+  const data = JSON.parse(text);
+  return data.body_html || '';
 }
+
+// ── Skeleton loading ──────────────────────────────────────────
 
 function discRenderSkeletons(n = 3) {
   return Array.from({length: n}, () => `
     <div class="disc-skeleton">
-      <div class="disc-skeleton-line" style="width:40%;margin-bottom:10px"></div>
-      <div class="disc-skeleton-line" style="width:90%"></div>
-      <div class="disc-skeleton-line" style="width:75%"></div>
-      <div class="disc-skeleton-line" style="width:55%;margin-top:6px"></div>
+      <div class="disc-skeleton-line" style="width:35%;margin-bottom:10px"></div>
+      <div class="disc-skeleton-line" style="width:85%"></div>
+      <div class="disc-skeleton-line" style="width:70%"></div>
+      <div class="disc-skeleton-line" style="width:50%;margin-top:6px"></div>
     </div>`).join('');
 }
+
+// ── Render article cards ──────────────────────────────────────
 
 function discRenderCards(items) {
   if (!items.length) {
     return `<div class="disc-empty"><span class="disc-empty-icon">📭</span>No articles found.</div>`;
   }
-  return items.map((item, i) => `
+  return items.map((item, i) => {
+    const coverHtml = item.coverImage
+      ? `<img src="${discEsc(item.coverImage)}" alt="" style="width:100%;border-radius:12px 12px 0 0;object-fit:cover;max-height:180px;display:block;">`
+      : '';
+    return `
     <div class="disc-article-card" id="disc-card-${i}" data-idx="${i}">
+      ${coverHtml}
       <div class="disc-article-summary" onclick="discToggleCard(${i})">
         <div class="disc-article-info">
           <div class="disc-article-date">${discEsc(item.dateStr)}</div>
           <div class="disc-article-title">${discEsc(item.title)}</div>
+          ${item.subtitle ? `<div class="disc-article-subtitle">${discEsc(item.subtitle)}</div>` : ''}
           <div class="disc-article-excerpt">${discEsc(item.excerpt)}</div>
         </div>
-        <div class="disc-expand-btn">▾</div>
+        <div class="disc-expand-btn" title="Read full article">▾</div>
       </div>
       <div class="disc-article-body" id="disc-body-${i}">
         <div class="disc-article-body-inner" id="disc-inner-${i}">
           <div class="disc-body-loading">⏳ Loading full article…</div>
         </div>
         <a class="disc-open-link" href="${discEsc(item.link)}" target="_blank" rel="noopener noreferrer">
-          ↗ Open original article
+          ↗ Open original on The Daily Brief
         </a>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-// ── Toggle card open/close, lazy-load full body ───────────────
+// ── Toggle card open/close + lazy-load full body ──────────────
 
 window.discToggleCard = async (i) => {
   const card  = document.getElementById(`disc-card-${i}`);
   const inner = document.getElementById(`disc-inner-${i}`);
-  if (!card) return;
+  if (!card || !inner) return;
 
   const isOpen = card.classList.contains('open');
-  // Close all others
   document.querySelectorAll('.disc-article-card.open').forEach(c => c.classList.remove('open'));
-  if (isOpen) return;  // was open — just close it
+  if (isOpen) return;
 
   card.classList.add('open');
-
-  // Scroll card into view smoothly
   setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
 
   const item = discFiltered[i];
   if (!item) return;
 
+  // Already loaded — show immediately
   if (item.fullLoaded) {
     inner.innerHTML = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
     return;
   }
 
-  // Try RSS content first (often complete for Ghost/Substack blogs)
-  if (item.contentHtml && discStripHtml(item.contentHtml).length > 400) {
-    item.fullHtml    = discCleanHtml(item.contentHtml);
+  // Show loading state
+  inner.innerHTML = `<div class="disc-body-loading">⏳ Fetching full article from The Daily Brief…</div>`;
+
+  try {
+    const rawHtml    = await discFetchBody(item.slug);
+    item.fullHtml    = discCleanHtml(rawHtml);
     item.fullLoaded  = true;
     inner.innerHTML  = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
-    return;
-  }
-
-  // Fetch full page for short RSS excerpts
-  inner.innerHTML = `<div class="disc-body-loading">⏳ Loading full article…</div>`;
-  try {
-    const pageHtml  = await discFetch(item.link, 12000);
-    const extracted = discExtractBody(pageHtml);
-    item.fullHtml   = extracted || discCleanHtml(item.contentHtml);
-    item.fullLoaded = true;
-    inner.innerHTML = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
   } catch (e) {
-    item.fullHtml   = discCleanHtml(item.contentHtml) || '<p>Could not load article. Please open the original link.</p>';
-    item.fullLoaded = true;
-    inner.innerHTML = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
+    inner.innerHTML = `<div class="disc-article-body-inner">
+      <p style="color:#b42318;font-family:'Rajdhani',sans-serif;font-weight:700;">
+        ⚠ Could not load full article. Please use the link below to read on the website.
+      </p>
+    </div>`;
   }
 };
 
-// ── Render the current page of discFiltered into #discFeed ────
+// ── Render current page into #discFeed ────────────────────────
 
 function discRenderPage() {
-  const feed  = document.getElementById('discFeed');
+  const feed    = document.getElementById('discFeed');
   const moreBtn = document.getElementById('discLoadMore');
   if (!feed) return;
 
   const end   = (discPage + 1) * DISC_PAGE_SIZE;
   const slice = discFiltered.slice(0, end);
-
   feed.innerHTML = discRenderCards(slice);
 
   if (moreBtn) {
@@ -4846,70 +4844,65 @@ function discRenderPage() {
   }
 }
 
-window.discLoadMore = () => {
-  discPage++;
-  discRenderPage();
-};
+window.discLoadMore = () => { discPage++; discRenderPage(); };
 
-// ── Search filtering ──────────────────────────────────────────
+// ── Search ────────────────────────────────────────────────────
 
 window.discOnSearch = () => {
   const q = (document.getElementById('discSearchInp')?.value || '').toLowerCase().trim();
   discFiltered = q
     ? discAllItems.filter(a =>
         a.title.toLowerCase().includes(q) ||
-        a.excerpt.toLowerCase().includes(q))
+        a.excerpt.toLowerCase().includes(q) ||
+        a.subtitle.toLowerCase().includes(q))
     : [...discAllItems];
   discPage = 0;
   discRenderPage();
-  discSetStatus(q
-    ? `${discFiltered.length} article${discFiltered.length !== 1 ? 's' : ''} matched "${q}"`
-    : `${discAllItems.length} articles loaded.`);
+  discSetStatus(
+    q ? `${discFiltered.length} article${discFiltered.length !== 1 ? 's' : ''} matched`
+      : `${discAllItems.length} articles loaded.`,
+    'ok'
+  );
 };
 
-// ── Refresh: re-fetch feed ────────────────────────────────────
+// ── Refresh ───────────────────────────────────────────────────
 
-window.discRefresh = async (silent = false) => {
-  const btn = document.getElementById('discRefreshBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
-  if (!silent) {
-    discSetStatus('Fetching latest articles from The Daily Brief…');
-    const feed = document.getElementById('discFeed');
-    if (feed) feed.innerHTML = discRenderSkeletons(3);
-  }
+window.discRefresh = async () => {
+  const btn     = document.getElementById('discRefreshBtn');
+  const feed    = document.getElementById('discFeed');
   const moreBtn = document.getElementById('discLoadMore');
-  if (moreBtn) moreBtn.style.display = 'none';
+
+  if (btn)    { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+  if (moreBtn)  moreBtn.style.display = 'none';
+  if (feed)   feed.innerHTML = discRenderSkeletons(3);
+
+  discSetStatus('Fetching latest articles from The Daily Brief…');
 
   try {
-    const xmlText = await discFetch(DISC_FEED_URL, 12000);
-    if (!xmlText.includes('<')) throw new Error('Invalid feed response');
-    discAllItems = discParseXml(xmlText);
+    discAllItems = await discFetchList(0, 12);
     discFiltered = [...discAllItems];
     discPage     = 0;
     discRenderPage();
-    discSetStatus(`${discAllItems.length} articles loaded.`);
+    discSetStatus(`${discAllItems.length} articles loaded. Tap any article to read in full.`, 'ok');
   } catch (e) {
-    const feed = document.getElementById('discFeed');
     if (feed) feed.innerHTML = `<div class="disc-empty">
       <span class="disc-empty-icon">⚠️</span>
-      Could not load feed. Check your internet connection and try again.
+      Could not load articles. Please check your internet connection and tap ↻ REFRESH.
     </div>`;
-    discSetStatus('Refresh failed. Tap ↻ REFRESH to try again.');
+    discSetStatus('Failed to load. Tap ↻ REFRESH to try again.', 'error');
+    console.error('discRefresh error:', e);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '↻ REFRESH'; }
   }
 };
 
-// ── Init (called once when screen is first opened) ────────────
+// ── Init (called once on first visit to Discover screen) ─────
 
 function discInit() {
-  // Apply saved font size
   discSetFont(discFontSize);
-
-  if (discInitialised) return;   // already loaded — don't re-fetch
+  if (discInitialised) return;
   discInitialised = true;
-
-  discRefresh(false);
+  discRefresh();
 }
 
 </script>
