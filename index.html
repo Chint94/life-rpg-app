@@ -321,6 +321,9 @@ body.simple-mode .role-level-badge,
 body.simple-mode .role-xp-row{display:none!important;}
 body.simple-mode #screen-dashboard .section-title::after{content:" — Simple Mode";color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:12px;margin-left:6px;}
 body.simple-mode .task-card{border-color:rgba(245,200,66,.25);} 
+.modal-overlay.role-from-task{z-index:900!important;}
+.btn-modal-save[disabled],.btn-role-action[disabled],.btn-task-sm[disabled]{opacity:.6;cursor:not-allowed;}
+
 .role-task-actions{display:flex;gap:8px;margin-top:8px;}
 .role-task-actions .btn-add-step{margin-top:0;}
 .weekday-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
@@ -636,8 +639,8 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
         <div class="color-opt" data-color="#14b8a6" style="background:#14b8a6" onclick="selectRoleColor(this)"></div>
       </div>
     </div>
-    <button class="btn-modal-save" onclick="saveRole()">⚔️ FORGE THIS ROLE</button>
-    <button class="btn-modal-cancel" onclick="closeModal('role-modal')">CANCEL</button>
+    <button type="button" class="btn-modal-save" onclick="saveRole()">⚔️ FORGE THIS ROLE</button>
+    <button type="button" class="btn-modal-cancel" onclick="closeModal('role-modal')">CANCEL</button>
   </div>
 </div>
 
@@ -663,9 +666,9 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
     <div class="form-group xp-reward-group gamified">
       <label class="form-label">XP Reward</label>
       <div class="xp-stepper">
-        <button onclick="changeXP(-5)">−</button>
+        <button type="button" onclick="changeXP(-5)">−</button>
         <span id="xp-value-display">10</span>
-        <button onclick="changeXP(5)">+</button>
+        <button type="button" onclick="changeXP(5)">+</button>
       </div>
     </div>
     <div class="form-group">
@@ -690,7 +693,7 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
     <div class="form-group">
       <label class="form-label">Sub-steps (optional)</label>
       <div class="steps-input-list" id="steps-input-list"></div>
-      <button class="btn-add-step" onclick="addStepInput()">+ ADD STEP</button>
+      <button type="button" class="btn-add-step" onclick="addStepInput()">+ ADD STEP</button>
     </div>
     <div class="form-group">
       <label class="form-label">Recurrence</label>
@@ -732,8 +735,8 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
         <label class="weekday-chip"><input type="checkbox" value="0">Sun</label>
       </div>
     </div>
-    <button class="btn-modal-save" onclick="saveTask()">SAVE TASK</button>
-    <button class="btn-modal-cancel" onclick="closeModal('task-modal')">CANCEL</button>
+    <button type="button" class="btn-modal-save" onclick="saveTask()">SAVE TASK</button>
+    <button type="button" class="btn-modal-cancel" onclick="closeModal('task-modal')">CANCEL</button>
   </div>
 </div>
 
@@ -1195,29 +1198,63 @@ window.openRoleModal = (id = null) => {
 };
 
 window.saveRole = async () => {
-  const name = document.getElementById('role-name').value.trim();
-  const desc = document.getElementById('role-desc').value.trim();
-  if (!name) { alert('Please enter a role name'); return; }
-  const uid = currentUser.uid;
-  const data = { name, desc, emoji: selectedRoleEmoji, color: selectedRoleColor };
-  if (editingRoleId) {
-    await updateDoc(doc(db, 'users', uid, 'roles', editingRoleId), data);
-    pendingSelectRoleId = roleReturnToTask ? editingRoleId : null;
-  } else {
-    const newRoleRef = await addDoc(collection(db, 'users', uid, 'roles'), { ...data, xp: 0, level: 1, createdAt: serverTimestamp() });
-    pendingSelectRoleId = roleReturnToTask ? newRoleRef.id : null;
+  const saveBtn = document.querySelector('#role-modal .btn-modal-save');
+  try {
+    const name = document.getElementById('role-name')?.value.trim();
+    const desc = document.getElementById('role-desc')?.value.trim() || '';
+    if (!name) { alert('Please enter a role name'); return; }
+    if (!currentUser?.uid) { alert('Please login again before saving roles.'); return; }
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'SAVING ROLE...'; }
+
+    const uid = currentUser.uid;
+    const data = {
+      name,
+      desc,
+      emoji: selectedRoleEmoji || '⚔️',
+      color: selectedRoleColor || '#f5c842',
+      updatedAt: serverTimestamp()
+    };
+
+    if (editingRoleId) {
+      await setDoc(doc(db, 'users', uid, 'roles', editingRoleId), data, { merge: true });
+      pendingSelectRoleId = roleReturnToTask ? editingRoleId : null;
+    } else {
+      const newRoleRef = await addDoc(collection(db, 'users', uid, 'roles'), {
+        ...data,
+        xp: 0,
+        level: 1,
+        createdAt: serverTimestamp()
+      });
+      pendingSelectRoleId = roleReturnToTask ? newRoleRef.id : null;
+    }
+
+    closeModal('role-modal');
+    document.getElementById('role-modal')?.classList.remove('role-from-task');
+    roleReturnToTask = false;
+    populateRoleSelect();
+    renderRoles();
+    setTimeout(() => {
+      if (pendingSelectRoleId && document.getElementById('task-role')) document.getElementById('task-role').value = pendingSelectRoleId;
+    }, 250);
+  } catch (e) {
+    console.error('Role save failed:', e);
+    alert(`Role could not be saved: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '⚔️ FORGE THIS ROLE'; }
   }
-  closeModal('role-modal');
-  document.getElementById('role-modal')?.classList.remove('role-from-task');
-  roleReturnToTask = false;
-  setTimeout(() => {
-    if (pendingSelectRoleId && document.getElementById('task-role')) document.getElementById('task-role').value = pendingSelectRoleId;
-  }, 250);
 };
 
 window.deleteRole = async (id) => {
-  if (!confirm('Delete this role? Tasks linked to it will remain.')) return;
-  await deleteDoc(doc(db, 'users', currentUser.uid, 'roles', id));
+  try {
+    if (!id) return;
+    if (!confirm('Delete this role? Tasks linked to it will remain.')) return;
+    if (!currentUser?.uid) { alert('Please login again before deleting roles.'); return; }
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'roles', id));
+    if (document.getElementById('task-role')?.value === id) document.getElementById('task-role').value = '';
+  } catch (e) {
+    console.error('Role delete failed:', e);
+    alert(`Role could not be deleted: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+  }
 };
 window.openRoleModalFromTask = () => {
   roleReturnToTask = true;
@@ -1355,8 +1392,15 @@ window.toggleStep = async (taskId, stepIdx) => {
 };
 
 window.deleteTask = async (id) => {
-  if (!confirm('Delete this task?')) return;
-  await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id));
+  try {
+    if (!id) return;
+    if (!confirm('Delete this task?')) return;
+    if (!currentUser?.uid) { alert('Please login again before deleting tasks.'); return; }
+    await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id));
+  } catch (e) {
+    console.error('Task delete failed:', e);
+    alert(`Task could not be deleted: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+  }
 };
 
 window.setTaskFilter = (f) => {
@@ -1435,43 +1479,72 @@ window.updateRecurrenceFields = () => {
 };
 
 window.saveTask = async () => {
-  const title = document.getElementById('task-title').value.trim();
-  if (!title) { alert('Please enter a task name'); return; }
-  const startTime = document.getElementById('task-start-time').value;
-  const endTime = document.getElementById('task-end-time').value;
-  if (startTime && endTime && timeToMinutes(endTime) <= timeToMinutes(startTime)) {
-    alert('End time should be after start time.');
-    return;
+  const saveBtn = document.querySelector('#task-modal .btn-modal-save');
+  try {
+    const title = document.getElementById('task-title')?.value.trim();
+    if (!title) { alert('Please enter a task name'); return; }
+    if (!currentUser?.uid) { alert('Please login again before saving tasks.'); return; }
+
+    const startTime = document.getElementById('task-start-time')?.value || '';
+    const endTime = document.getElementById('task-end-time')?.value || '';
+    if (startTime && endTime && timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      alert('End time should be after start time.');
+      return;
+    }
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'SAVING TASK...'; }
+
+    const uid = currentUser.uid;
+    const existingSteps = editingTaskId && tasks[editingTaskId]?.steps ? tasks[editingTaskId].steps : [];
+    const steps = [...document.querySelectorAll('#steps-input-list .form-input')]
+      .map((input, idx) => {
+        const name = input.value.trim();
+        const oldStep = existingSteps[idx];
+        return name ? { name, done: !!oldStep?.done } : null;
+      })
+      .filter(Boolean);
+
+    const startDate = document.getElementById('task-deadline')?.value || null;
+    const recurrence = document.getElementById('task-recurrence')?.value || 'none';
+    const data = {
+      title,
+      roleId: document.getElementById('task-role')?.value || null,
+      xp: Number(xpValue || 10),
+      priority: document.getElementById('task-priority')?.value || 'medium',
+      startDate,
+      deadline: startDate,
+      startTime: startTime || null,
+      endTime: endTime || null,
+      recurrence,
+      hourlyInterval: Number(document.getElementById('task-hourly-interval')?.value || 1),
+      customInterval: Number(document.getElementById('task-custom-interval')?.value || 1),
+      customUnit: document.getElementById('task-custom-unit')?.value || 'days',
+      customWeekdays: recurrence === 'custom' ? getCustomWeekdays() : [],
+      steps,
+      updatedAt: serverTimestamp()
+    };
+
+    if (editingTaskId) {
+      await setDoc(doc(db, 'users', uid, 'tasks', editingTaskId), data, { merge: true });
+    } else {
+      await addDoc(collection(db, 'users', uid, 'tasks'), {
+        ...data,
+        completed: false,
+        completedAt: null,
+        createdAt: serverTimestamp()
+      });
+    }
+
+    closeModal('task-modal');
+    editingTaskId = null;
+    renderTasks();
+    renderDashboard();
+    renderTimeline();
+  } catch (e) {
+    console.error('Task save failed:', e);
+    alert(`Task could not be saved: ${e?.message || 'Please check your internet/Firebase access and try again.'}`);
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'SAVE TASK'; }
   }
-  const uid = currentUser.uid;
-  const steps = [...document.querySelectorAll('#steps-input-list .form-input')]
-    .map(i => ({ name: i.value.trim(), done: false }))
-    .filter(s => s.name);
-  const data = {
-    title,
-    roleId: document.getElementById('task-role').value || null,
-    xp: xpValue,
-    priority: document.getElementById('task-priority').value,
-    startDate: document.getElementById('task-deadline').value || null,
-    deadline: document.getElementById('task-deadline').value || null,
-    startTime: document.getElementById('task-start-time').value || null,
-    endTime: document.getElementById('task-end-time').value || null,
-    recurrence: document.getElementById('task-recurrence').value,
-    hourlyInterval: Number(document.getElementById('task-hourly-interval').value || 1),
-    customInterval: Number(document.getElementById('task-custom-interval').value || 1),
-    customUnit: document.getElementById('task-custom-unit').value || 'days',
-    customWeekdays: getCustomWeekdays(),
-    steps,
-  };
-  if (editingTaskId) {
-    await updateDoc(doc(db, 'users', uid, 'tasks', editingTaskId), data);
-  } else {
-    await addDoc(collection(db, 'users', uid, 'tasks'), { ...data, completed: false, completedAt: null, createdAt: serverTimestamp() });
-  }
-  renderTasks();
-  renderDashboard();
-  renderTimeline();
-  closeModal('task-modal');
 };
 
 // ─────────────────────────────────────────────
