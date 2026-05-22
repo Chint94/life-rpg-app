@@ -654,7 +654,7 @@ body.simple-mode .xp-pop{display:none!important;}
 #screen-discover .discover-list{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
 #screen-discover .discover-article{min-height:auto!important;cursor:pointer;}
 #screen-discover .discover-article.active{border-color:#b87600!important;box-shadow:0 10px 24px rgba(126,83,0,.18)!important;background:linear-gradient(145deg,#fff8dc,#ffe27a)!important;}
-.discover-reader{min-height:430px;max-height:calc(100dvh - 250px);overflow:auto;background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,250,222,.76));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:18px;box-shadow:0 8px 22px rgba(126,83,0,.10);}
+.discover-reader{min-height:640px;max-height:none;overflow:visible;background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,250,222,.76));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:18px;box-shadow:0 8px 22px rgba(126,83,0,.10);}
 .discover-reader-empty{height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#7b5b00;gap:8px;font-family:'Rajdhani',sans-serif;letter-spacing:.5px;}
 .discover-reader h2{font-family:'Cinzel',serif;color:#2b1a00;font-size:22px;line-height:1.25;margin-bottom:8px;}
 .discover-reader-meta{font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:1px;color:#8a5a00;text-transform:uppercase;font-size:12px;margin-bottom:14px;}
@@ -865,21 +865,21 @@ body.simple-mode .xp-pop{display:none!important;}
         <div class="discover-head">
           <div>
             <div class="discover-kicker">THE DAILY BRIEF BY ZERODHA</div>
-            <h3>Latest 3 Substack Briefings</h3>
+            <h3>Latest 3 Daily Brief Articles</h3>
             <p>Refresh to pull the newest stories, then open any article to read it inside Command Centre.</p>
           </div>
         </div>
         <div class="discover-controls">
           <label for="discover-font-slider">Mobile reader text size</label>
-          <input type="range" id="discover-font-slider" min="12" max="22" value="15" oninput="setDiscoverFontSize(this.value)">
+          <input type="range" id="discover-font-slider" min="12" max="24" value="15" oninput="setDiscoverFontSize(this.value)">
         </div>
-        <div id="discover-status" class="discover-status">Press Refresh to load the latest Substack articles.</div>
+        <div id="discover-status" class="discover-status">Press Refresh to load the latest articles from The Daily Brief website.</div>
         <div class="discover-layout">
           <div class="discover-list" id="discover-list"></div>
           <article class="discover-reader" id="discover-reader">
             <div class="discover-reader-empty">
               <strong>Select an article</strong>
-              <span>The full article will appear here when available from the Substack feed.</span>
+              <span>The full article will appear here after you select an article.</span>
             </div>
           </article>
         </div>
@@ -2750,10 +2750,9 @@ function renderJournalEntries() {
 
 
 // ─────────────────────────────────────────────
-// DISCOVER - THE DAILY BRIEF BY ZERODHA
+// DISCOVER - THE DAILY BRIEF BY ZERODHA WEBSITE
 // ─────────────────────────────────────────────
 const DAILY_BRIEF_FEED = 'https://thedailybrief.zerodha.com/feed';
-const DAILY_BRIEF_SUBSTACK_FEED = 'https://thedailybrief.zerodha.com/feed';
 const DAILY_BRIEF_HOME = 'https://thedailybrief.zerodha.com/';
 let discoverArticlesCache = [];
 let discoverInitialized = false;
@@ -2767,18 +2766,19 @@ function stripHtml(value) {
 function cleanArticleHtml(value) {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = value || '';
-  wrapper.querySelectorAll('script, style, iframe, form, button, input, noscript').forEach(el => el.remove());
+  wrapper.querySelectorAll('script, style, iframe, form, button, input, noscript, svg').forEach(el => el.remove());
   wrapper.querySelectorAll('*').forEach(el => {
     [...el.attributes].forEach(attr => {
       const n = attr.name.toLowerCase();
-      if (n.startsWith('on') || n === 'style') el.removeAttribute(attr.name);
+      if (n.startsWith('on') || n === 'style' || n === 'srcset') el.removeAttribute(attr.name);
     });
     if (el.tagName === 'A') {
       el.setAttribute('target', '_blank');
       el.setAttribute('rel', 'noopener noreferrer');
     }
   });
-  return wrapper.innerHTML || '<p>Full article text was not included in the feed. Use the article link below to open it.</p>';
+  const cleaned = wrapper.innerHTML.trim();
+  return cleaned || '<p>Full article text could not be loaded inside the app. Use the original article link below.</p>';
 }
 
 function formatDiscoverDate(value) {
@@ -2800,6 +2800,46 @@ function getNodeContent(node, names) {
   return '';
 }
 
+function proxyUrls(url) {
+  return [
+    url,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`
+  ];
+}
+
+async function fetchThroughProxy(url) {
+  let lastErr;
+  for (const candidate of proxyUrls(url)) {
+    try {
+      const res = await fetch(candidate, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      if (!text || text.length < 100) throw new Error('Empty response');
+      return text;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('Could not load content');
+}
+
+function extractArticleHtmlFromPage(pageHtml) {
+  const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
+  doc.querySelectorAll('script, style, nav, header, footer, iframe, form, button, input, noscript').forEach(el => el.remove());
+  const candidates = [
+    doc.querySelector('article'),
+    doc.querySelector('[class*="post-content"]'),
+    doc.querySelector('[class*="body"]'),
+    doc.querySelector('main')
+  ].filter(Boolean);
+  let best = candidates[0];
+  let bestLen = 0;
+  candidates.forEach(el => {
+    const len = stripHtml(el.innerHTML).length;
+    if (len > bestLen) { best = el; bestLen = len; }
+  });
+  return best ? cleanArticleHtml(best.innerHTML) : '';
+}
+
 function renderDiscoverArticles(items) {
   discoverArticlesCache = (items || []).slice(0, 3);
   const list = document.getElementById('discover-list');
@@ -2812,7 +2852,7 @@ function renderDiscoverArticles(items) {
   list.innerHTML = discoverArticlesCache.map((item, index) => {
     const title = escHtml(item.title || 'Untitled article');
     const date = escHtml(formatDiscoverDate(item.pubDate));
-    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 220));
+    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 260));
     return `<div class="discover-article ${index === 0 ? 'active' : ''}" role="button" tabindex="0" onclick="openDiscoverArticle(${index})" onkeydown="if(event.key==='Enter'){openDiscoverArticle(${index})}">
       <div class="discover-date">${date}</div>
       <div class="discover-title">${title}</div>
@@ -2823,17 +2863,36 @@ function renderDiscoverArticles(items) {
   renderDiscoverReader(discoverArticlesCache[0]);
 }
 
-function renderDiscoverReader(item) {
+async function enrichArticleIfNeeded(item) {
+  if (!item || item.fullLoaded || !item.link) return item;
+  try {
+    const pageHtml = await fetchThroughProxy(item.link);
+    const fullHtml = extractArticleHtmlFromPage(pageHtml);
+    if (stripHtml(fullHtml).length > stripHtml(item.content || item.description || '').length) {
+      item.content = fullHtml;
+    }
+    item.fullLoaded = true;
+  } catch (e) {
+    item.fullLoaded = false;
+  }
+  return item;
+}
+
+async function renderDiscoverReader(item) {
   const reader = document.getElementById('discover-reader');
   if (!reader) return;
   if (!item) {
-    reader.innerHTML = `<div class="discover-reader-empty"><strong>Select an article</strong><span>The full article will appear here when available from the Substack feed.</span></div>`;
+    reader.innerHTML = `<div class="discover-reader-empty"><strong>Select an article</strong><span>The full article will appear here after you select an article.</span></div>`;
     return;
   }
   const title = escHtml(item.title || 'Untitled article');
   const date = escHtml(formatDiscoverDate(item.pubDate));
   const link = escHtml(item.link || DAILY_BRIEF_HOME);
-  const body = cleanArticleHtml(item.content || item.description || '');
+  reader.innerHTML = `<h2>${title}</h2>
+    <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
+    <div class="discover-reader-body"><p>Loading full article inside Command Centre...</p></div>`;
+  const enriched = await enrichArticleIfNeeded(item);
+  const body = cleanArticleHtml(enriched.content || enriched.description || '');
   reader.innerHTML = `<h2>${title}</h2>
     <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
     <div class="discover-reader-body">${body}</div>
@@ -2846,27 +2905,13 @@ window.openDiscoverArticle = (index) => {
 };
 
 async function fetchDiscoverFeed() {
-  const direct = DAILY_BRIEF_SUBSTACK_FEED;
-  const proxies = [
-    direct,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(direct)}`,
-    `https://corsproxy.io/?${encodeURIComponent(direct)}`
-  ];
-  let lastErr;
-  for (const url of proxies) {
-    try {
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      if (!text || !text.includes('<')) throw new Error('Invalid feed response');
-      return text;
-    } catch (e) { lastErr = e; }
-  }
-  throw lastErr || new Error('Could not load feed');
+  const text = await fetchThroughProxy(DAILY_BRIEF_FEED);
+  if (!text || !text.includes('<')) throw new Error('Invalid feed response');
+  return text;
 }
 
 window.refreshDiscoverArticles = async (manual = false) => {
-  setDiscoverStatus('Loading latest Substack articles...');
+  setDiscoverStatus('Loading latest articles from The Daily Brief website...');
   try {
     const xmlText = await fetchDiscoverFeed();
     const docXml = new DOMParser().parseFromString(xmlText, 'application/xml');
@@ -2875,18 +2920,19 @@ window.refreshDiscoverArticles = async (manual = false) => {
       link: node.querySelector('link')?.getAttribute('href') || node.querySelector('link')?.textContent?.trim() || '',
       pubDate: node.querySelector('pubDate, published, updated')?.textContent?.trim() || '',
       description: getNodeContent(node, ['description', 'summary']),
-      content: getNodeContent(node, ['content:encoded', 'encoded', 'content'])
+      content: getNodeContent(node, ['content:encoded', 'encoded', 'content']),
+      fullLoaded: false
     }));
     renderDiscoverArticles(entries);
-    setDiscoverStatus(entries.length ? 'Latest 3 articles loaded from The Daily Brief Substack feed.' : 'No recent articles found in the feed.');
+    setDiscoverStatus(entries.length ? 'Latest 3 articles loaded from The Daily Brief website.' : 'No recent articles found in the feed.');
   } catch (e) {
     renderDiscoverArticles([]);
-    setDiscoverStatus('Unable to refresh automatically. This can happen if Substack blocks browser access or a CORS proxy is unavailable. Try again or open the original website.');
+    setDiscoverStatus('Unable to refresh automatically. This can happen if The Daily Brief website blocks browser access or a CORS proxy is unavailable. Try again or open the original website.');
   }
 };
 
 window.setDiscoverFontSize = (value) => {
-  const size = Math.max(12, Math.min(22, Number(value) || 15));
+  const size = Math.max(12, Math.min(24, Number(value) || 15));
   document.documentElement.style.setProperty('--discover-font-size', `${size}px`);
   localStorage.setItem('cc_discover_font_size', String(size));
 };
