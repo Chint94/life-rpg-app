@@ -625,48 +625,28 @@ body.simple-mode .xp-pop{display:none!important;}
 @media (max-width:899px){.insights-body{grid-template-columns:1fr}.task-donut{width:120px;height:120px}.task-donut::after{width:74px;height:74px}.insights-metrics{grid-template-columns:1fr 1fr}.role-bar-row{grid-template-columns:92px 1fr 30px}.insights-head h3{font-size:15px;}}
 
 
+/* ── GOOGLE DRIVE ATTACHMENTS ── */
+.drive-attach-section{margin-top:4px;}
+.drive-attach-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.drive-attach-header label{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:900;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;}
+.drive-auth-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:900;font-size:12px;letter-spacing:.8px;background:linear-gradient(135deg,#4285f4,#1a73e8);color:#fff;transition:opacity .2s;}
+.drive-auth-btn:hover{opacity:.88;}
+.drive-auth-btn:disabled{opacity:.5;cursor:not-allowed;}
+.drive-upload-zone{border:2px dashed var(--border-glow);border-radius:14px;padding:16px 12px;text-align:center;background:rgba(120,80,255,.04);cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+.drive-upload-zone:hover,.drive-upload-zone.dragover{border-color:var(--purple);background:rgba(120,80,255,.09);}
+.drive-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drive-upload-hint{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text-dim);letter-spacing:.5px;pointer-events:none;}
+.drive-file-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.drive-file-chip{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:12px;}
+.drive-file-chip .drive-file-icon{font-size:16px;flex-shrink:0;}
+.drive-file-chip .drive-file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-main);letter-spacing:.3px;}
+.drive-file-chip .drive-file-status{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--text-dim);white-space:nowrap;letter-spacing:.3px;}
+.drive-file-chip .drive-file-link{font-size:15px;text-decoration:none;flex-shrink:0;}
+.drive-file-chip .drive-file-remove{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:15px;padding:0 2px;line-height:1;flex-shrink:0;}
+.drive-file-chip .drive-file-remove:hover{color:#e53e3e;}
+.drive-not-connected{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--text-dim);background:rgba(0,0,0,.04);border-radius:10px;padding:10px 12px;text-align:center;letter-spacing:.3px;}
 
-/* ── DISCOVER SECTION UPDATE ── */
-.discover-card{background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(255,240,178,.78));border:1px solid rgba(126,83,0,.22);border-radius:22px;padding:16px;margin:0 0 18px;box-shadow:0 12px 32px rgba(126,83,0,.14);}
-.discover-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;}
-.discover-kicker{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:1.4px;color:#8a5a00;text-transform:uppercase;}
-.discover-head h3{font-family:'Cinzel',serif;font-size:16px;color:#2b1a00;margin-top:2px;letter-spacing:.8px;}
-.discover-head p{font-size:12px;color:#7b5b00;margin-top:3px;}
-.discover-refresh{white-space:nowrap;border-radius:999px!important;padding:8px 14px!important;}
-.discover-controls{display:flex;align-items:center;gap:10px;margin:8px 0 12px;background:rgba(255,255,255,.55);border:1px solid rgba(126,83,0,.14);border-radius:14px;padding:10px 12px;}
-.discover-controls label{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:900;letter-spacing:.8px;color:#6b4700;text-transform:uppercase;white-space:nowrap;}
-.discover-controls input{width:100%;accent-color:#b87600;}
-.discover-status{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#7b5b00;letter-spacing:.4px;margin:8px 0;}
-.discover-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
-.discover-article{display:flex;flex-direction:column;gap:8px;min-height:160px;background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,250,222,.72));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:13px;box-shadow:0 8px 20px rgba(126,83,0,.08);color:#2b1a00;text-decoration:none;transition:transform .18s, box-shadow .18s;}
-.discover-article:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(126,83,0,.14);}
-.discover-date{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:.8px;color:#8a5a00;text-transform:uppercase;}
-.discover-title{font-family:'Cinzel',serif;font-size:15px;font-weight:900;line-height:1.25;color:#2b1a00;}
-.discover-excerpt{font-size:var(--discover-font-size,14px);line-height:1.45;color:#4a3300;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
-.discover-source{margin-top:auto;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:.9px;color:#6b4700;text-transform:uppercase;}
-@media (max-width:899px){.discover-list{grid-template-columns:1fr}.discover-head{flex-direction:column}.discover-refresh{width:100%;justify-content:center}.discover-title{font-size:15px}.discover-article{min-height:auto}}
-
-
-
-/* ── DEDICATED DISCOVER SECTION REWORK ── */
-.discover-page-card{margin:0 0 18px!important;}
-.discover-layout{display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start;}
-#screen-discover .discover-list{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
-#screen-discover .discover-article{min-height:auto!important;cursor:pointer;}
-#screen-discover .discover-article.active{border-color:#b87600!important;box-shadow:0 10px 24px rgba(126,83,0,.18)!important;background:linear-gradient(145deg,#fff8dc,#ffe27a)!important;}
-.discover-reader{min-height:640px;max-height:none;overflow-y:auto;overflow-x:hidden;background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,250,222,.76));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:22px 24px 28px;box-shadow:0 8px 22px rgba(126,83,0,.10);}
-.discover-reader-empty{height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#7b5b00;gap:8px;font-family:'Rajdhani',sans-serif;letter-spacing:.5px;}
-.discover-reader h2{font-family:'Cinzel',serif;color:#2b1a00;font-size:22px;line-height:1.25;margin-bottom:8px;}
-.discover-reader-meta{font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:1px;color:#8a5a00;text-transform:uppercase;font-size:12px;margin-bottom:14px;}
-.discover-reader-body{font-size:var(--discover-font-size,15px);line-height:1.72;color:#2b1a00;}
-.discover-reader-body p{margin:0 0 14px;}
-.discover-reader-body h1,.discover-reader-body h2,.discover-reader-body h3{margin:18px 0 10px;color:#2b1a00;line-height:1.25;}
-.discover-reader-body img{max-width:100%;border-radius:14px;margin:10px 0;}
-.discover-reader-body a{color:#7a4d00;font-weight:800;}
-.discover-open-link{display:inline-flex;margin-top:14px;border-radius:999px;padding:9px 14px;text-decoration:none;background:linear-gradient(135deg,#ffd84a,#b87600);color:#201100!important;font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:.8px;}
 @media (max-width:899px){
-  .discover-layout{grid-template-columns:1fr;}
-  .discover-reader{max-height:none;min-height:320px;}
   #bottom-nav{overflow-x:auto;}
   .nav-item{min-width:58px;}
 }
@@ -854,37 +834,6 @@ body.simple-mode .xp-pop{display:none!important;}
     </div>
 
 
-    <!-- DISCOVER -->
-    <div class="screen" id="screen-discover">
-      <div class="section-hdr" style="margin-top:16px;">
-        <span class="section-title">DISCOVER</span>
-        <button class="btn-add discover-refresh" onclick="refreshDiscoverArticles(true)">↻ REFRESH</button>
-      </div>
-      <div class="discover-card discover-page-card" id="discover-card">
-        <div class="discover-head">
-          <div>
-            <div class="discover-kicker">THE DAILY BRIEF BY ZERODHA</div>
-            <h3>Latest 3 Daily Brief Articles</h3>
-            <p>Refresh to pull the newest stories, then open any article to read it inside Command Centre.</p>
-          </div>
-        </div>
-        <div class="discover-controls">
-          <label for="discover-font-slider">Reader text size</label>
-          <input type="range" id="discover-font-slider" min="12" max="24" value="15" oninput="setDiscoverFontSize(this.value)">
-          <span id="discover-font-label" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:900;color:#6b4700;white-space:nowrap;min-width:30px;">15px</span>
-        </div>
-        <div id="discover-status" class="discover-status">Press Refresh to load the latest articles from The Daily Brief website.</div>
-        <div class="discover-layout">
-          <div class="discover-list" id="discover-list"></div>
-          <article class="discover-reader" id="discover-reader">
-            <div class="discover-reader-empty">
-              <strong>Select an article</strong>
-              <span>The full article will appear here after you select an article.</span>
-            </div>
-          </article>
-        </div>
-      </div>
-    </div>
 
     <!-- TASKS -->
     <div class="screen" id="screen-tasks">
@@ -1058,10 +1007,7 @@ body.simple-mode .xp-pop{display:none!important;}
       <span class="nav-icon">◎</span>
       <span class="nav-label">Roles</span>
     </div>
-    <div class="nav-item" data-screen="discover" onclick="switchScreen('discover',this)">
-      <span class="nav-icon">◆</span>
-      <span class="nav-label">Discover</span>
-    </div>
+
     <div class="nav-item" data-screen="settings" onclick="switchScreen('settings',this)">
       <span class="nav-icon">⚙</span>
       <span class="nav-label">Settings</span>
@@ -1227,7 +1173,27 @@ body.simple-mode .xp-pop{display:none!important;}
         <label class="weekday-chip"><input type="checkbox" value="0">Sun</label>
       </div>
     </div>
-    <button type="button" class="btn-modal-save" onclick="saveTask()">SAVE TASK</button>
+    <div class="form-group drive-attach-section" id="task-drive-section">
+      <div class="drive-attach-header">
+        <label>📎 Google Drive Attachments</label>
+        <button type="button" class="drive-auth-btn" id="drive-auth-btn" onclick="driveSignIn()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6.18 15L3.5 19.5h17L17.82 15H6.18zM12 3L3.5 17.5h3.68L12 9l4.82 8.5h3.68L12 3z"/></svg>
+          Connect Google Drive
+        </button>
+      </div>
+      <div id="drive-not-connected" class="drive-not-connected">
+        Connect Google Drive above to attach files to this task. Files will be uploaded to a <strong>Command Centre Attachments</strong> folder in your Drive.
+      </div>
+      <div id="drive-connected-ui" style="display:none;">
+        <div class="drive-upload-zone" id="drive-upload-zone"
+          ondragover="driveDragOver(event)" ondragleave="driveDragLeave(event)" ondrop="driveDrop(event)">
+          <input type="file" id="drive-file-input" multiple onchange="driveFilesSelected(event)" />
+          <div class="drive-upload-hint">📂 Tap to choose files, or drag &amp; drop here</div>
+        </div>
+        <div class="drive-file-list" id="drive-file-list"></div>
+      </div>
+    </div>
+        <button type="button" class="btn-modal-save" onclick="saveTask()">SAVE TASK</button>
     <button type="button" class="btn-modal-delete hidden" id="task-modal-delete" onclick="deleteEditingTask()">DELETE TASK</button>
     <button type="button" class="btn-modal-cancel" onclick="closeModal('task-modal')">CANCEL</button>
   </div>
@@ -1488,11 +1454,10 @@ window.switchScreen = (name, navEl) => {
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
   document.getElementById('main-content').scrollTop = 0;
-  const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', discover: '◆ DISCOVER', settings: '⚙ SETTINGS & GUIDE' };
+  const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', settings: '⚙ SETTINGS & GUIDE' };
   document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
   if (name === 'tasks') renderTasks();
-  if (name === 'discover') initDiscoverSection(true);
 };
 
 
@@ -2264,6 +2229,8 @@ window.openTaskModal = (id = null) => {
     setWeeklyWeekdays([]);
     updateRecurrenceFields();
   }
+  // Initialise Drive attachments panel
+  driveInitModal(id && tasks[id] ? (tasks[id].driveAttachments || []) : []);
   openModal('task-modal');
 };
 
@@ -2346,7 +2313,8 @@ window.saveTask = async () => {
       completed: tasks[taskId]?.completed || false,
       completedAt: tasks[taskId]?.completedAt || null,
       createdAtLocal: tasks[taskId]?.createdAtLocal || new Date().toISOString(),
-      updatedAtLocal: new Date().toISOString()
+      updatedAtLocal: new Date().toISOString(),
+      driveAttachments: driveGetSavedAttachments()
     };
 
     tasks[taskId] = { ...(tasks[taskId] || {}), ...localData };
@@ -2376,6 +2344,7 @@ window.saveTask = async () => {
           steps: [],
           completed: localData.completed,
           completedAt: localData.completedAt,
+          driveAttachments: localData.driveAttachments || [],
           createdAtLocal: localData.createdAtLocal,
           updatedAt: serverTimestamp()
         }, { merge: true });
@@ -2750,271 +2719,6 @@ function renderJournalEntries() {
 
 
 // ─────────────────────────────────────────────
-// DISCOVER - THE DAILY BRIEF BY ZERODHA WEBSITE
-// ─────────────────────────────────────────────
-const DAILY_BRIEF_FEED = 'https://thedailybrief.zerodha.com/feed';
-const DAILY_BRIEF_HOME = 'https://thedailybrief.zerodha.com/';
-let discoverArticlesCache = [];
-let discoverInitialized = false;
-let discoverActiveIndex = 0;
-
-function stripHtml(value) {
-  const div = document.createElement('div');
-  div.innerHTML = value || '';
-  return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
-}
-
-function cleanArticleHtml(value) {
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = value || '';
-  wrapper.querySelectorAll('script, style, iframe, form, button, input, noscript, svg').forEach(el => el.remove());
-  wrapper.querySelectorAll('*').forEach(el => {
-    [...el.attributes].forEach(attr => {
-      const n = attr.name.toLowerCase();
-      if (n.startsWith('on') || n === 'style' || n === 'srcset') el.removeAttribute(attr.name);
-    });
-    if (el.tagName === 'A') {
-      el.setAttribute('target', '_blank');
-      el.setAttribute('rel', 'noopener noreferrer');
-    }
-  });
-  const cleaned = wrapper.innerHTML.trim();
-  return cleaned || '<p>Full article text could not be extracted. Please use the link below to open the original article.</p>';
-}
-
-function formatDiscoverDate(value) {
-  const d = value ? new Date(value) : null;
-  if (!d || Number.isNaN(d.getTime())) return 'Latest';
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function setDiscoverStatus(message, isLoading = false) {
-  const el = document.getElementById('discover-status');
-  if (!el) return;
-  el.textContent = message || '';
-  el.style.color = isLoading ? '#b87600' : '#7b5b00';
-}
-
-function getNodeContent(node, names) {
-  for (const name of names) {
-    const found = node.getElementsByTagName(name)[0] || node.querySelector(name);
-    if (found && found.textContent) return found.textContent;
-  }
-  return '';
-}
-
-/* ── FAST PROXY: race allorigins + corsproxy simultaneously, take first ── */
-async function fetchThroughProxy(url, timeoutMs = 8000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const proxies = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    url
-  ];
-  const attempts = proxies.map(async (candidate) => {
-    const res = await fetch(candidate, { cache: 'no-store', signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    if (!text || text.length < 100) throw new Error('Empty response');
-    return text;
-  });
-  try {
-    const result = await Promise.any(attempts);
-    clearTimeout(timer);
-    return result;
-  } catch (e) {
-    clearTimeout(timer);
-    throw new Error('All proxies failed');
-  }
-}
-
-function extractArticleHtmlFromPage(pageHtml) {
-  const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
-  doc.querySelectorAll('script, style, nav, header, footer, iframe, form, button, input, noscript').forEach(el => el.remove());
-  const selectors = [
-    'article .post-content', 'article .entry-content', 'article .content',
-    'article', '[class*="post-content"]', '[class*="entry-content"]',
-    '[class*="article-body"]', '.gh-content', 'main'
-  ];
-  let best = null;
-  let bestLen = 0;
-  for (const sel of selectors) {
-    const el = doc.querySelector(sel);
-    if (!el) continue;
-    const len = stripHtml(el.innerHTML).length;
-    if (len > bestLen) { best = el; bestLen = len; }
-  }
-  return best ? cleanArticleHtml(best.innerHTML) : '';
-}
-
-/* ── Pre-fetch all 3 articles in parallel for instant switching ── */
-async function prefetchAllArticles(items) {
-  return Promise.all(items.map(async (item) => {
-    if (!item || item.fullLoaded || !item.link) return item;
-    try {
-      const pageHtml = await fetchThroughProxy(item.link, 12000);
-      const fullHtml = extractArticleHtmlFromPage(pageHtml);
-      if (fullHtml && stripHtml(fullHtml).length > 200) {
-        item.content = fullHtml;
-      }
-      item.fullLoaded = true;
-    } catch (e) {
-      item.fullLoaded = false;
-    }
-    return item;
-  }));
-}
-
-function renderDiscoverListOnly(items) {
-  const list = document.getElementById('discover-list');
-  if (!list) return;
-  if (!items.length) {
-    list.innerHTML = `<div class="hq-list-note">No articles loaded yet. Tap Refresh.</div>`;
-    return;
-  }
-  list.innerHTML = items.map((item, index) => {
-    const title = escHtml(item.title || 'Untitled article');
-    const date = escHtml(formatDiscoverDate(item.pubDate));
-    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 200));
-    const loadingBadge = item.fullLoaded === undefined ? `<div class="discover-source" id="discover-badge-${index}">⏳ Loading…</div>` : '';
-    const readyBadge = item.fullLoaded ? `<div class="discover-source" id="discover-badge-${index}">✓ Ready to read</div>` : `<div class="discover-source" id="discover-badge-${index}">↗ Open original</div>`;
-    return `<div class="discover-article ${index === discoverActiveIndex ? 'active' : ''}" role="button" tabindex="0" onclick="openDiscoverArticle(${index})" onkeydown="if(event.key==='Enter'){openDiscoverArticle(${index})}">
-      <div class="discover-date">${date}</div>
-      <div class="discover-title">${title}</div>
-      <div class="discover-excerpt">${excerpt || 'Tap to read this Daily Brief article.'}</div>
-      ${item.fullLoaded === undefined ? loadingBadge : readyBadge}
-    </div>`;
-  }).join('');
-}
-
-function updateArticleBadge(index, loaded) {
-  const badge = document.getElementById(`discover-badge-${index}`);
-  if (badge) {
-    badge.textContent = loaded ? '✓ Ready to read' : '↗ Open original';
-  }
-}
-
-function renderDiscoverReaderInstant(item) {
-  const reader = document.getElementById('discover-reader');
-  if (!reader) return;
-  if (!item) {
-    reader.innerHTML = `<div class="discover-reader-empty"><strong>Select an article</strong><span>The full article will appear here after selecting an article from the list.</span></div>`;
-    return;
-  }
-  const title = escHtml(item.title || 'Untitled article');
-  const date = escHtml(formatDiscoverDate(item.pubDate));
-  const link = escHtml(item.link || DAILY_BRIEF_HOME);
-
-  if (item.fullLoaded) {
-    const body = cleanArticleHtml(item.content || item.description || '');
-    reader.innerHTML = `<h2>${title}</h2>
-      <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
-      <div class="discover-reader-body">${body}</div>
-      <a class="discover-open-link" href="${link}" target="_blank" rel="noopener noreferrer">↗ Open original article</a>`;
-    reader.scrollTop = 0;
-  } else if (item.fullLoaded === false) {
-    const body = cleanArticleHtml(item.description || '');
-    reader.innerHTML = `<h2>${title}</h2>
-      <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
-      <div class="discover-reader-body">${body || '<p>Full content could not be loaded automatically.</p>'}</div>
-      <a class="discover-open-link" href="${link}" target="_blank" rel="noopener noreferrer">↗ Open original article</a>`;
-    reader.scrollTop = 0;
-  } else {
-    reader.innerHTML = `<h2>${title}</h2>
-      <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
-      <div class="discover-reader-body"><p style="color:#b87600;font-weight:700;">⏳ Fetching full article… please wait a moment.</p></div>`;
-  }
-}
-
-window.openDiscoverArticle = (index) => {
-  discoverActiveIndex = index;
-  document.querySelectorAll('#discover-list .discover-article').forEach((el, i) => el.classList.toggle('active', i === index));
-  renderDiscoverReaderInstant(discoverArticlesCache[index]);
-};
-
-async function renderDiscoverArticles(items) {
-  discoverArticlesCache = (items || []).slice(0, 3);
-  renderDiscoverListOnly(discoverArticlesCache);
-  renderDiscoverReaderInstant(discoverArticlesCache[0] || null);
-
-  if (!discoverArticlesCache.length) return;
-
-  /* Kick off parallel full-article fetches immediately */
-  discoverArticlesCache.forEach((item, index) => {
-    if (!item || !item.link) return;
-    fetchThroughProxy(item.link, 12000).then(pageHtml => {
-      const fullHtml = extractArticleHtmlFromPage(pageHtml);
-      if (fullHtml && stripHtml(fullHtml).length > 200) {
-        item.content = fullHtml;
-      }
-      item.fullLoaded = true;
-      updateArticleBadge(index, true);
-      /* If this is the currently active article, re-render reader instantly */
-      if (index === discoverActiveIndex) renderDiscoverReaderInstant(item);
-    }).catch(() => {
-      item.fullLoaded = false;
-      updateArticleBadge(index, false);
-      if (index === discoverActiveIndex) renderDiscoverReaderInstant(item);
-    });
-  });
-}
-
-async function fetchDiscoverFeed() {
-  const text = await fetchThroughProxy(DAILY_BRIEF_FEED);
-  if (!text || !text.includes('<')) throw new Error('Invalid feed response');
-  return text;
-}
-
-window.refreshDiscoverArticles = async (manual = false) => {
-  discoverActiveIndex = 0;
-  setDiscoverStatus('⏳ Loading latest articles from The Daily Brief…', true);
-  const btn = document.querySelector('.discover-refresh');
-  if (btn) { btn.disabled = true; btn.textContent = '↻ Loading…'; }
-  try {
-    const xmlText = await fetchDiscoverFeed();
-    const docXml = new DOMParser().parseFromString(xmlText, 'application/xml');
-    const entries = Array.from(docXml.querySelectorAll('item, entry')).slice(0, 3).map(node => ({
-      title: node.querySelector('title')?.textContent?.trim() || '',
-      link: node.querySelector('link')?.getAttribute('href') || node.querySelector('link')?.textContent?.trim() || '',
-      pubDate: node.querySelector('pubDate, published, updated')?.textContent?.trim() || '',
-      description: getNodeContent(node, ['description', 'summary']),
-      content: getNodeContent(node, ['content:encoded', 'encoded', 'content']),
-      fullLoaded: undefined
-    }));
-    await renderDiscoverArticles(entries);
-    setDiscoverStatus(entries.length ? `✓ ${entries.length} latest articles loaded — full content fetching in background.` : 'No recent articles found in the feed.');
-  } catch (e) {
-    await renderDiscoverArticles([]);
-    setDiscoverStatus('⚠ Could not load feed. CORS proxy may be unavailable. Try again or open The Daily Brief directly.');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '↻ REFRESH'; }
-  }
-};
-
-window.setDiscoverFontSize = (value) => {
-  const size = Math.max(12, Math.min(24, Number(value) || 15));
-  document.documentElement.style.setProperty('--discover-font-size', `${size}px`);
-  const label = document.getElementById('discover-font-label');
-  if (label) label.textContent = `${size}px`;
-  localStorage.setItem('cc_discover_font_size', String(size));
-};
-
-function initDiscoverSection(loadIfEmpty = false) {
-  const saved = localStorage.getItem('cc_discover_font_size') || '15';
-  const slider = document.getElementById('discover-font-slider');
-  if (slider) slider.value = saved;
-  setDiscoverFontSize(saved);
-  if (!discoverInitialized) {
-    renderDiscoverArticles([]);
-    discoverInitialized = true;
-  }
-  if (loadIfEmpty && !discoverArticlesCache.length) refreshDiscoverArticles(false);
-}
-
-initDiscoverSection();
-
-// ─────────────────────────────────────────────
 // MODALS
 // ─────────────────────────────────────────────
 window.openModal = (id) => {
@@ -3046,6 +2750,224 @@ function escHtml(str) {
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('task-deadline').min = today;
 updateRecurrenceFields();
+
+// ═══════════════════════════════════════════════════════════════
+// GOOGLE DRIVE ATTACHMENTS
+// ═══════════════════════════════════════════════════════════════
+// Uses Google Identity Services (GIS) + Drive REST API v3.
+// No backend needed — all browser-side with OAuth2 PKCE token.
+// ---------------------------------------------------------------
+// SETUP REQUIRED — see guide in the HTML output file header.
+// Replace DRIVE_CLIENT_ID below with your OAuth Client ID.
+// ---------------------------------------------------------------
+
+const DRIVE_CLIENT_ID = '654477930191-5ilmuk9v0opsetvpjei14o7dgku4ddtg.apps.googleusercontent.com';
+const DRIVE_SCOPES    = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_NAME = 'Command Centre Attachments';
+
+let driveAccessToken   = null;
+let driveFolderId      = null;
+let driveTokenClient   = null;
+let driveGisLoaded     = false;
+
+// Per-task pending attachments: { name, file, driveFileId, driveUrl, status }
+let taskDriveAttachments = [];   // UI staging list (current modal session)
+// Saved per task: stored as task.driveAttachments = [{name, driveFileId, driveUrl}]
+
+// ── Load Google Identity Services script dynamically ──
+function loadGisScript() {
+  if (document.getElementById('gis-script')) return;
+  const s = document.createElement('script');
+  s.id = 'gis-script';
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true; s.defer = true;
+  s.onload = () => { driveGisLoaded = true; };
+  document.head.appendChild(s);
+}
+loadGisScript();
+
+function driveIsConfigured() {
+  return DRIVE_CLIENT_ID && !DRIVE_CLIENT_ID.startsWith('YOUR_GOOGLE');
+}
+
+function driveInitTokenClient() {
+  if (driveTokenClient || !window.google?.accounts?.oauth2) return;
+  driveTokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: DRIVE_CLIENT_ID,
+    scope: DRIVE_SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { driveShowStatus('Google sign-in failed: ' + resp.error); return; }
+      driveAccessToken = resp.access_token;
+      localStorage.setItem('cc_drive_token', resp.access_token);
+      await driveEnsureFolder();
+      driveShowConnectedUI();
+    }
+  });
+}
+
+window.driveSignIn = () => {
+  if (!driveIsConfigured()) {
+    alert('Google Drive is not configured yet.\n\nPlease follow the setup steps in the file comments:\n1. Create a Google Cloud project\n2. Enable Drive API\n3. Create an OAuth 2.0 Web Client ID\n4. Replace DRIVE_CLIENT_ID in the script.');
+    return;
+  }
+  if (!window.google?.accounts?.oauth2) {
+    driveShowStatus('Google Identity Services still loading — please wait a moment and try again.');
+    return;
+  }
+  driveInitTokenClient();
+  driveTokenClient.requestAccessToken({ prompt: '' });
+};
+
+function driveShowConnectedUI() {
+  document.getElementById('drive-not-connected').style.display = 'none';
+  document.getElementById('drive-connected-ui').style.display  = 'block';
+  const btn = document.getElementById('drive-auth-btn');
+  if (btn) { btn.textContent = '✓ Drive Connected'; btn.style.background = 'linear-gradient(135deg,#34a853,#1e7e34)'; btn.disabled = true; }
+}
+
+function driveShowDisconnectedUI() {
+  document.getElementById('drive-not-connected').style.display = '';
+  document.getElementById('drive-connected-ui').style.display  = 'none';
+  const btn = document.getElementById('drive-auth-btn');
+  if (btn) { btn.textContent = 'Connect Google Drive'; btn.style.background = ''; btn.disabled = false; }
+}
+
+async function driveEnsureFolder() {
+  if (driveFolderId) return driveFolderId;
+  // Search for existing folder
+  const q = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+    headers: { Authorization: `Bearer ${driveAccessToken}` }
+  });
+  const data = await res.json();
+  if (data.files && data.files.length > 0) {
+    driveFolderId = data.files[0].id;
+    return driveFolderId;
+  }
+  // Create folder
+  const create = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${driveAccessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+  });
+  const folder = await create.json();
+  driveFolderId = folder.id;
+  return driveFolderId;
+}
+
+function driveGetFileIcon(name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  const map = { pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊', ppt:'📊', pptx:'📊', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', gif:'🖼️', mp4:'🎬', mov:'🎬', mp3:'🎵', zip:'🗜️', rar:'🗜️' };
+  return map[ext] || '📎';
+}
+
+function renderDriveFileList() {
+  const list = document.getElementById('drive-file-list');
+  if (!list) return;
+  if (!taskDriveAttachments.length) { list.innerHTML = ''; return; }
+  list.innerHTML = taskDriveAttachments.map((f, i) => `
+    <div class="drive-file-chip" id="drive-chip-${i}">
+      <span class="drive-file-icon">${driveGetFileIcon(f.name)}</span>
+      <span class="drive-file-name" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
+      <span class="drive-file-status">${
+        f.status === 'uploading' ? '⏳ Uploading…' :
+        f.status === 'done'      ? '✓ Uploaded' :
+        f.status === 'error'     ? '⚠ Failed' : ''
+      }</span>
+      ${f.driveUrl ? `<a class="drive-file-link" href="${escHtml(f.driveUrl)}" target="_blank" rel="noopener" title="Open in Drive">↗</a>` : ''}
+      ${f.status !== 'uploading' ? `<button class="drive-file-remove" onclick="driveRemoveFile(${i})" title="Remove">✕</button>` : ''}
+    </div>`).join('');
+}
+
+window.driveRemoveFile = async (index) => {
+  const f = taskDriveAttachments[index];
+  if (f && f.driveFileId && driveAccessToken) {
+    // Delete from Drive silently
+    fetch(`https://www.googleapis.com/drive/v3/files/${f.driveFileId}`, {
+      method: 'DELETE', headers: { Authorization: `Bearer ${driveAccessToken}` }
+    }).catch(() => {});
+  }
+  taskDriveAttachments.splice(index, 1);
+  renderDriveFileList();
+};
+
+async function driveUploadFile(file) {
+  const idx = taskDriveAttachments.length;
+  taskDriveAttachments.push({ name: file.name, file, status: 'uploading', driveFileId: null, driveUrl: null });
+  renderDriveFileList();
+
+  try {
+    await driveEnsureFolder();
+    const meta = JSON.stringify({ name: file.name, parents: [driveFolderId] });
+    const form = new FormData();
+    form.append('metadata', new Blob([meta], { type: 'application/json' }));
+    form.append('file', file);
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${driveAccessToken}` },
+      body: form
+    });
+    if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+    const data = await res.json();
+    taskDriveAttachments[idx].status      = 'done';
+    taskDriveAttachments[idx].driveFileId = data.id;
+    taskDriveAttachments[idx].driveUrl    = data.webViewLink;
+  } catch (e) {
+    taskDriveAttachments[idx].status = 'error';
+  }
+  renderDriveFileList();
+}
+
+window.driveFilesSelected = (event) => {
+  [...(event.target.files || [])].forEach(driveUploadFile);
+  event.target.value = '';
+};
+
+window.driveDragOver  = (e) => { e.preventDefault(); document.getElementById('drive-upload-zone')?.classList.add('dragover'); };
+window.driveDragLeave = (e) => { document.getElementById('drive-upload-zone')?.classList.remove('dragover'); };
+window.driveDrop      = (e) => {
+  e.preventDefault();
+  document.getElementById('drive-upload-zone')?.classList.remove('dragover');
+  [...(e.dataTransfer.files || [])].forEach(driveUploadFile);
+};
+
+// ── Called when task modal opens ──
+function driveInitModal(existingAttachments = []) {
+  // Restore any already-saved attachments for this task as "done"
+  taskDriveAttachments = (existingAttachments || []).map(a => ({
+    name: a.name, file: null, status: 'done',
+    driveFileId: a.driveFileId, driveUrl: a.driveUrl
+  }));
+  renderDriveFileList();
+
+  if (!driveIsConfigured()) {
+    const nc = document.getElementById('drive-not-connected');
+    if (nc) nc.innerHTML = '⚙️ Google Drive not configured yet. See the <strong>Setup Guide</strong> in settings to add your OAuth Client ID.';
+    return;
+  }
+
+  // Restore token from localStorage if valid
+  const saved = localStorage.getItem('cc_drive_token');
+  if (saved) {
+    driveAccessToken = saved;
+    driveShowConnectedUI();
+  } else {
+    driveShowDisconnectedUI();
+  }
+  setTimeout(() => { if (window.google?.accounts?.oauth2) driveInitTokenClient(); }, 500);
+}
+
+// ── Get attachment list for saving ──
+function driveGetSavedAttachments() {
+  return taskDriveAttachments
+    .filter(f => f.status === 'done' && f.driveFileId)
+    .map(f => ({ name: f.name, driveFileId: f.driveFileId, driveUrl: f.driveUrl }));
+}
+
+function driveShowStatus(msg) {
+  const nc = document.getElementById('drive-not-connected');
+  if (nc) nc.textContent = msg;
+}
 
 </script>
 </body>
