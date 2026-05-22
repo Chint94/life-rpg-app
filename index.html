@@ -644,6 +644,10 @@ body.simple-mode .xp-pop{display:none!important;}
 .drive-file-chip .drive-file-link{font-size:15px;text-decoration:none;flex-shrink:0;}
 .drive-file-chip .drive-file-remove{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:15px;padding:0 2px;line-height:1;flex-shrink:0;}
 .drive-file-chip .drive-file-remove:hover{color:#e53e3e;}
+.drive-file-chip.is-deleting{opacity:.55;pointer-events:none;}
+.drive-file-chip.is-deleting .drive-file-status{color:#b87600;}
+.drive-file-chip.delete-error{border-color:#e53e3e;background:rgba(229,62,62,.06);}
+.drive-file-chip.delete-error .drive-file-status{color:#e53e3e;}
 .drive-not-connected{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--text-dim);background:rgba(0,0,0,.04);border-radius:10px;padding:10px 12px;text-align:center;letter-spacing:.3px;}
 
 @media (max-width:899px){
@@ -2865,30 +2869,77 @@ function renderDriveFileList() {
   const list = document.getElementById('drive-file-list');
   if (!list) return;
   if (!taskDriveAttachments.length) { list.innerHTML = ''; return; }
-  list.innerHTML = taskDriveAttachments.map((f, i) => `
-    <div class="drive-file-chip" id="drive-chip-${i}">
+  list.innerHTML = taskDriveAttachments.map((f, i) => {
+    const chipClass = f.status === 'deleting' ? 'drive-file-chip is-deleting'
+                    : f.status === 'delete-error' ? 'drive-file-chip delete-error'
+                    : 'drive-file-chip';
+    const statusText = f.status === 'uploading'     ? '⏳ Uploading…'
+                     : f.status === 'done'           ? '✓ Uploaded'
+                     : f.status === 'error'          ? '⚠ Upload failed'
+                     : f.status === 'deleting'       ? '🗑 Deleting from Drive…'
+                     : f.status === 'delete-error'   ? '⚠ Drive delete failed — retry?'
+                     : '';
+    const canRemove = f.status !== 'uploading' && f.status !== 'deleting';
+    return `<div class="${chipClass}" id="drive-chip-${i}">
       <span class="drive-file-icon">${driveGetFileIcon(f.name)}</span>
       <span class="drive-file-name" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
-      <span class="drive-file-status">${
-        f.status === 'uploading' ? '⏳ Uploading…' :
-        f.status === 'done'      ? '✓ Uploaded' :
-        f.status === 'error'     ? '⚠ Failed' : ''
-      }</span>
+      <span class="drive-file-status">${statusText}</span>
       ${f.driveUrl ? `<a class="drive-file-link" href="${escHtml(f.driveUrl)}" target="_blank" rel="noopener" title="Open in Drive">↗</a>` : ''}
-      ${f.status !== 'uploading' ? `<button class="drive-file-remove" onclick="driveRemoveFile(${i})" title="Remove">✕</button>` : ''}
-    </div>`).join('');
+      ${canRemove ? `<button class="drive-file-remove" onclick="driveRemoveFile(${i})" title="${f.status === 'delete-error' ? 'Retry delete' : 'Remove & delete from Drive'}">✕</button>` : ''}
+    </div>`;
+  }).join('');
 }
 
 window.driveRemoveFile = async (index) => {
   const f = taskDriveAttachments[index];
-  if (f && f.driveFileId && driveAccessToken) {
-    // Delete from Drive silently
-    fetch(`https://www.googleapis.com/drive/v3/files/${f.driveFileId}`, {
-      method: 'DELETE', headers: { Authorization: `Bearer ${driveAccessToken}` }
-    }).catch(() => {});
+  if (!f) return;
+
+  // If the file was never successfully uploaded to Drive, just remove it locally.
+  if (!f.driveFileId) {
+    taskDriveAttachments.splice(index, 1);
+    renderDriveFileList();
+    return;
   }
-  taskDriveAttachments.splice(index, 1);
+
+  // If no token, inform the user — can't delete from Drive without auth.
+  if (!driveAccessToken) {
+    if (!confirm(`"${f.name}" was uploaded to Google Drive but you are not connected.\n\nRemove it from this task anyway? (The Drive copy will NOT be deleted.)\n\nTo delete from Drive too, reconnect Google Drive first.`)) return;
+    taskDriveAttachments.splice(index, 1);
+    renderDriveFileList();
+    return;
+  }
+
+  // Mark as deleting and re-render so the chip shows a spinner and blocks double-clicks.
+  taskDriveAttachments[index].status = 'deleting';
   renderDriveFileList();
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${f.driveFileId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${driveAccessToken}` }
+    });
+
+    // 204 = success (no content). 404 = already gone — both are fine.
+    if (res.status === 204 || res.status === 404) {
+      taskDriveAttachments.splice(index, 1);
+      renderDriveFileList();
+    } else if (res.status === 401) {
+      // Token expired — clear it and tell the user.
+      driveAccessToken = null;
+      localStorage.removeItem('cc_drive_token');
+      taskDriveAttachments[index].status = 'delete-error';
+      renderDriveFileList();
+      alert(`Google Drive session expired.\n\nPlease reconnect Drive (click "Connect Google Drive") and then try removing the file again.`);
+    } else {
+      // Any other HTTP error — show retry state on the chip.
+      taskDriveAttachments[index].status = 'delete-error';
+      renderDriveFileList();
+    }
+  } catch (e) {
+    // Network error — show retry state.
+    taskDriveAttachments[index].status = 'delete-error';
+    renderDriveFileList();
+  }
 };
 
 async function driveUploadFile(file) {
