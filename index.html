@@ -633,7 +633,7 @@ body.simple-mode .xp-pop{display:none!important;}
 .discover-head h3{font-family:'Cinzel',serif;font-size:16px;color:#2b1a00;margin-top:2px;letter-spacing:.8px;}
 .discover-head p{font-size:12px;color:#7b5b00;margin-top:3px;}
 .discover-refresh{white-space:nowrap;border-radius:999px!important;padding:8px 14px!important;}
-.discover-controls{display:none;align-items:center;gap:10px;margin:8px 0 12px;background:rgba(255,255,255,.55);border:1px solid rgba(126,83,0,.14);border-radius:14px;padding:10px 12px;}
+.discover-controls{display:flex;align-items:center;gap:10px;margin:8px 0 12px;background:rgba(255,255,255,.55);border:1px solid rgba(126,83,0,.14);border-radius:14px;padding:10px 12px;}
 .discover-controls label{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:900;letter-spacing:.8px;color:#6b4700;text-transform:uppercase;white-space:nowrap;}
 .discover-controls input{width:100%;accent-color:#b87600;}
 .discover-status{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#7b5b00;letter-spacing:.4px;margin:8px 0;}
@@ -644,7 +644,7 @@ body.simple-mode .xp-pop{display:none!important;}
 .discover-title{font-family:'Cinzel',serif;font-size:15px;font-weight:900;line-height:1.25;color:#2b1a00;}
 .discover-excerpt{font-size:var(--discover-font-size,14px);line-height:1.45;color:#4a3300;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
 .discover-source{margin-top:auto;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:.9px;color:#6b4700;text-transform:uppercase;}
-@media (max-width:899px){.discover-list{grid-template-columns:1fr}.discover-controls{display:flex}.discover-head{flex-direction:column}.discover-refresh{width:100%;justify-content:center}.discover-title{font-size:15px}.discover-article{min-height:auto}}
+@media (max-width:899px){.discover-list{grid-template-columns:1fr}.discover-head{flex-direction:column}.discover-refresh{width:100%;justify-content:center}.discover-title{font-size:15px}.discover-article{min-height:auto}}
 
 
 
@@ -654,7 +654,7 @@ body.simple-mode .xp-pop{display:none!important;}
 #screen-discover .discover-list{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
 #screen-discover .discover-article{min-height:auto!important;cursor:pointer;}
 #screen-discover .discover-article.active{border-color:#b87600!important;box-shadow:0 10px 24px rgba(126,83,0,.18)!important;background:linear-gradient(145deg,#fff8dc,#ffe27a)!important;}
-.discover-reader{min-height:640px;max-height:none;overflow:visible;background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,250,222,.76));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:18px;box-shadow:0 8px 22px rgba(126,83,0,.10);}
+.discover-reader{min-height:640px;max-height:none;overflow-y:auto;overflow-x:hidden;background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,250,222,.76));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:22px 24px 28px;box-shadow:0 8px 22px rgba(126,83,0,.10);}
 .discover-reader-empty{height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#7b5b00;gap:8px;font-family:'Rajdhani',sans-serif;letter-spacing:.5px;}
 .discover-reader h2{font-family:'Cinzel',serif;color:#2b1a00;font-size:22px;line-height:1.25;margin-bottom:8px;}
 .discover-reader-meta{font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:1px;color:#8a5a00;text-transform:uppercase;font-size:12px;margin-bottom:14px;}
@@ -667,7 +667,6 @@ body.simple-mode .xp-pop{display:none!important;}
 @media (max-width:899px){
   .discover-layout{grid-template-columns:1fr;}
   .discover-reader{max-height:none;min-height:320px;}
-  .discover-controls{display:flex!important;}
   #bottom-nav{overflow-x:auto;}
   .nav-item{min-width:58px;}
 }
@@ -870,8 +869,9 @@ body.simple-mode .xp-pop{display:none!important;}
           </div>
         </div>
         <div class="discover-controls">
-          <label for="discover-font-slider">Mobile reader text size</label>
+          <label for="discover-font-slider">Reader text size</label>
           <input type="range" id="discover-font-slider" min="12" max="24" value="15" oninput="setDiscoverFontSize(this.value)">
+          <span id="discover-font-label" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:900;color:#6b4700;white-space:nowrap;min-width:30px;">15px</span>
         </div>
         <div id="discover-status" class="discover-status">Press Refresh to load the latest articles from The Daily Brief website.</div>
         <div class="discover-layout">
@@ -2756,6 +2756,7 @@ const DAILY_BRIEF_FEED = 'https://thedailybrief.zerodha.com/feed';
 const DAILY_BRIEF_HOME = 'https://thedailybrief.zerodha.com/';
 let discoverArticlesCache = [];
 let discoverInitialized = false;
+let discoverActiveIndex = 0;
 
 function stripHtml(value) {
   const div = document.createElement('div');
@@ -2778,7 +2779,7 @@ function cleanArticleHtml(value) {
     }
   });
   const cleaned = wrapper.innerHTML.trim();
-  return cleaned || '<p>Full article text could not be loaded inside the app. Use the original article link below.</p>';
+  return cleaned || '<p>Full article text could not be extracted. Please use the link below to open the original article.</p>';
 }
 
 function formatDiscoverDate(value) {
@@ -2787,9 +2788,11 @@ function formatDiscoverDate(value) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function setDiscoverStatus(message) {
+function setDiscoverStatus(message, isLoading = false) {
   const el = document.getElementById('discover-status');
-  if (el) el.textContent = message || '';
+  if (!el) return;
+  el.textContent = message || '';
+  el.style.color = isLoading ? '#b87600' : '#7b5b00';
 }
 
 function getNodeContent(node, names) {
@@ -2800,109 +2803,162 @@ function getNodeContent(node, names) {
   return '';
 }
 
-function proxyUrls(url) {
-  return [
-    url,
+/* ── FAST PROXY: race allorigins + corsproxy simultaneously, take first ── */
+async function fetchThroughProxy(url, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const proxies = [
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    `https://corsproxy.io/?${encodeURIComponent(url)}`
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url
   ];
-}
-
-async function fetchThroughProxy(url) {
-  let lastErr;
-  for (const candidate of proxyUrls(url)) {
-    try {
-      const res = await fetch(candidate, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      if (!text || text.length < 100) throw new Error('Empty response');
-      return text;
-    } catch (e) { lastErr = e; }
+  const attempts = proxies.map(async (candidate) => {
+    const res = await fetch(candidate, { cache: 'no-store', signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || text.length < 100) throw new Error('Empty response');
+    return text;
+  });
+  try {
+    const result = await Promise.any(attempts);
+    clearTimeout(timer);
+    return result;
+  } catch (e) {
+    clearTimeout(timer);
+    throw new Error('All proxies failed');
   }
-  throw lastErr || new Error('Could not load content');
 }
 
 function extractArticleHtmlFromPage(pageHtml) {
   const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
   doc.querySelectorAll('script, style, nav, header, footer, iframe, form, button, input, noscript').forEach(el => el.remove());
-  const candidates = [
-    doc.querySelector('article'),
-    doc.querySelector('[class*="post-content"]'),
-    doc.querySelector('[class*="body"]'),
-    doc.querySelector('main')
-  ].filter(Boolean);
-  let best = candidates[0];
+  const selectors = [
+    'article .post-content', 'article .entry-content', 'article .content',
+    'article', '[class*="post-content"]', '[class*="entry-content"]',
+    '[class*="article-body"]', '.gh-content', 'main'
+  ];
+  let best = null;
   let bestLen = 0;
-  candidates.forEach(el => {
+  for (const sel of selectors) {
+    const el = doc.querySelector(sel);
+    if (!el) continue;
     const len = stripHtml(el.innerHTML).length;
     if (len > bestLen) { best = el; bestLen = len; }
-  });
+  }
   return best ? cleanArticleHtml(best.innerHTML) : '';
 }
 
-function renderDiscoverArticles(items) {
-  discoverArticlesCache = (items || []).slice(0, 3);
+/* ── Pre-fetch all 3 articles in parallel for instant switching ── */
+async function prefetchAllArticles(items) {
+  return Promise.all(items.map(async (item) => {
+    if (!item || item.fullLoaded || !item.link) return item;
+    try {
+      const pageHtml = await fetchThroughProxy(item.link, 12000);
+      const fullHtml = extractArticleHtmlFromPage(pageHtml);
+      if (fullHtml && stripHtml(fullHtml).length > 200) {
+        item.content = fullHtml;
+      }
+      item.fullLoaded = true;
+    } catch (e) {
+      item.fullLoaded = false;
+    }
+    return item;
+  }));
+}
+
+function renderDiscoverListOnly(items) {
   const list = document.getElementById('discover-list');
   if (!list) return;
-  if (!discoverArticlesCache.length) {
+  if (!items.length) {
     list.innerHTML = `<div class="hq-list-note">No articles loaded yet. Tap Refresh.</div>`;
-    renderDiscoverReader(null);
     return;
   }
-  list.innerHTML = discoverArticlesCache.map((item, index) => {
+  list.innerHTML = items.map((item, index) => {
     const title = escHtml(item.title || 'Untitled article');
     const date = escHtml(formatDiscoverDate(item.pubDate));
-    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 260));
-    return `<div class="discover-article ${index === 0 ? 'active' : ''}" role="button" tabindex="0" onclick="openDiscoverArticle(${index})" onkeydown="if(event.key==='Enter'){openDiscoverArticle(${index})}">
+    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 200));
+    const loadingBadge = item.fullLoaded === undefined ? `<div class="discover-source" id="discover-badge-${index}">⏳ Loading…</div>` : '';
+    const readyBadge = item.fullLoaded ? `<div class="discover-source" id="discover-badge-${index}">✓ Ready to read</div>` : `<div class="discover-source" id="discover-badge-${index}">↗ Open original</div>`;
+    return `<div class="discover-article ${index === discoverActiveIndex ? 'active' : ''}" role="button" tabindex="0" onclick="openDiscoverArticle(${index})" onkeydown="if(event.key==='Enter'){openDiscoverArticle(${index})}">
       <div class="discover-date">${date}</div>
       <div class="discover-title">${title}</div>
-      <div class="discover-excerpt">${excerpt || 'Tap to read this Daily Brief article inside Command Centre.'}</div>
-      <div class="discover-source">Tap to read inside →</div>
+      <div class="discover-excerpt">${excerpt || 'Tap to read this Daily Brief article.'}</div>
+      ${item.fullLoaded === undefined ? loadingBadge : readyBadge}
     </div>`;
   }).join('');
-  renderDiscoverReader(discoverArticlesCache[0]);
 }
 
-async function enrichArticleIfNeeded(item) {
-  if (!item || item.fullLoaded || !item.link) return item;
-  try {
-    const pageHtml = await fetchThroughProxy(item.link);
-    const fullHtml = extractArticleHtmlFromPage(pageHtml);
-    if (stripHtml(fullHtml).length > stripHtml(item.content || item.description || '').length) {
-      item.content = fullHtml;
-    }
-    item.fullLoaded = true;
-  } catch (e) {
-    item.fullLoaded = false;
+function updateArticleBadge(index, loaded) {
+  const badge = document.getElementById(`discover-badge-${index}`);
+  if (badge) {
+    badge.textContent = loaded ? '✓ Ready to read' : '↗ Open original';
   }
-  return item;
 }
 
-async function renderDiscoverReader(item) {
+function renderDiscoverReaderInstant(item) {
   const reader = document.getElementById('discover-reader');
   if (!reader) return;
   if (!item) {
-    reader.innerHTML = `<div class="discover-reader-empty"><strong>Select an article</strong><span>The full article will appear here after you select an article.</span></div>`;
+    reader.innerHTML = `<div class="discover-reader-empty"><strong>Select an article</strong><span>The full article will appear here after selecting an article from the list.</span></div>`;
     return;
   }
   const title = escHtml(item.title || 'Untitled article');
   const date = escHtml(formatDiscoverDate(item.pubDate));
   const link = escHtml(item.link || DAILY_BRIEF_HOME);
-  reader.innerHTML = `<h2>${title}</h2>
-    <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
-    <div class="discover-reader-body"><p>Loading full article inside Command Centre...</p></div>`;
-  const enriched = await enrichArticleIfNeeded(item);
-  const body = cleanArticleHtml(enriched.content || enriched.description || '');
-  reader.innerHTML = `<h2>${title}</h2>
-    <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
-    <div class="discover-reader-body">${body}</div>
-    <a class="discover-open-link" href="${link}" target="_blank" rel="noopener noreferrer">Open original article</a>`;
+
+  if (item.fullLoaded) {
+    const body = cleanArticleHtml(item.content || item.description || '');
+    reader.innerHTML = `<h2>${title}</h2>
+      <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
+      <div class="discover-reader-body">${body}</div>
+      <a class="discover-open-link" href="${link}" target="_blank" rel="noopener noreferrer">↗ Open original article</a>`;
+    reader.scrollTop = 0;
+  } else if (item.fullLoaded === false) {
+    const body = cleanArticleHtml(item.description || '');
+    reader.innerHTML = `<h2>${title}</h2>
+      <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
+      <div class="discover-reader-body">${body || '<p>Full content could not be loaded automatically.</p>'}</div>
+      <a class="discover-open-link" href="${link}" target="_blank" rel="noopener noreferrer">↗ Open original article</a>`;
+    reader.scrollTop = 0;
+  } else {
+    reader.innerHTML = `<h2>${title}</h2>
+      <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
+      <div class="discover-reader-body"><p style="color:#b87600;font-weight:700;">⏳ Fetching full article… please wait a moment.</p></div>`;
+  }
 }
 
 window.openDiscoverArticle = (index) => {
+  discoverActiveIndex = index;
   document.querySelectorAll('#discover-list .discover-article').forEach((el, i) => el.classList.toggle('active', i === index));
-  renderDiscoverReader(discoverArticlesCache[index]);
+  renderDiscoverReaderInstant(discoverArticlesCache[index]);
 };
+
+async function renderDiscoverArticles(items) {
+  discoverArticlesCache = (items || []).slice(0, 3);
+  renderDiscoverListOnly(discoverArticlesCache);
+  renderDiscoverReaderInstant(discoverArticlesCache[0] || null);
+
+  if (!discoverArticlesCache.length) return;
+
+  /* Kick off parallel full-article fetches immediately */
+  discoverArticlesCache.forEach((item, index) => {
+    if (!item || !item.link) return;
+    fetchThroughProxy(item.link, 12000).then(pageHtml => {
+      const fullHtml = extractArticleHtmlFromPage(pageHtml);
+      if (fullHtml && stripHtml(fullHtml).length > 200) {
+        item.content = fullHtml;
+      }
+      item.fullLoaded = true;
+      updateArticleBadge(index, true);
+      /* If this is the currently active article, re-render reader instantly */
+      if (index === discoverActiveIndex) renderDiscoverReaderInstant(item);
+    }).catch(() => {
+      item.fullLoaded = false;
+      updateArticleBadge(index, false);
+      if (index === discoverActiveIndex) renderDiscoverReaderInstant(item);
+    });
+  });
+}
 
 async function fetchDiscoverFeed() {
   const text = await fetchThroughProxy(DAILY_BRIEF_FEED);
@@ -2911,7 +2967,10 @@ async function fetchDiscoverFeed() {
 }
 
 window.refreshDiscoverArticles = async (manual = false) => {
-  setDiscoverStatus('Loading latest articles from The Daily Brief website...');
+  discoverActiveIndex = 0;
+  setDiscoverStatus('⏳ Loading latest articles from The Daily Brief…', true);
+  const btn = document.querySelector('.discover-refresh');
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Loading…'; }
   try {
     const xmlText = await fetchDiscoverFeed();
     const docXml = new DOMParser().parseFromString(xmlText, 'application/xml');
@@ -2921,19 +2980,23 @@ window.refreshDiscoverArticles = async (manual = false) => {
       pubDate: node.querySelector('pubDate, published, updated')?.textContent?.trim() || '',
       description: getNodeContent(node, ['description', 'summary']),
       content: getNodeContent(node, ['content:encoded', 'encoded', 'content']),
-      fullLoaded: false
+      fullLoaded: undefined
     }));
-    renderDiscoverArticles(entries);
-    setDiscoverStatus(entries.length ? 'Latest 3 articles loaded from The Daily Brief website.' : 'No recent articles found in the feed.');
+    await renderDiscoverArticles(entries);
+    setDiscoverStatus(entries.length ? `✓ ${entries.length} latest articles loaded — full content fetching in background.` : 'No recent articles found in the feed.');
   } catch (e) {
-    renderDiscoverArticles([]);
-    setDiscoverStatus('Unable to refresh automatically. This can happen if The Daily Brief website blocks browser access or a CORS proxy is unavailable. Try again or open the original website.');
+    await renderDiscoverArticles([]);
+    setDiscoverStatus('⚠ Could not load feed. CORS proxy may be unavailable. Try again or open The Daily Brief directly.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ REFRESH'; }
   }
 };
 
 window.setDiscoverFontSize = (value) => {
   const size = Math.max(12, Math.min(24, Number(value) || 15));
   document.documentElement.style.setProperty('--discover-font-size', `${size}px`);
+  const label = document.getElementById('discover-font-label');
+  if (label) label.textContent = `${size}px`;
   localStorage.setItem('cc_discover_font_size', String(size));
 };
 
