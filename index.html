@@ -2480,7 +2480,7 @@ body.simple-mode .xp-pop{display:none!important;}
       <div id="drive-connected-ui" style="display:none;" class="drive-desktop-only">
         <div class="drive-upload-zone" id="drive-upload-zone"
           ondragover="driveDragOver(event)" ondragleave="driveDragLeave(event)" ondrop="driveDrop(event)">
-          <input type="file" id="drive-file-input" multiple onchange="driveFilesSelected(event)" />
+          <input type="file" id="drive-file-input" multiple accept="*/*" onchange="driveFilesSelected(event)" />
           <div class="drive-upload-hint">📂 Tap to choose files, or drag &amp; drop here</div>
         </div>
       </div>
@@ -4376,7 +4376,7 @@ function renderDriveFileList() {
                     : 'drive-file-chip';
     const statusText = f.status === 'uploading'     ? '⏳ Uploading…'
                      : f.status === 'done'           ? '✓ Uploaded'
-                     : f.status === 'error'          ? '⚠ Upload failed'
+                     : f.status === 'error'          ? `⚠ Upload failed${f.errorDetail ? ' — ' + f.errorDetail : ''}`
                      : f.status === 'deleting'       ? '🗑 Deleting from Drive…'
                      : f.status === 'delete-error'   ? '⚠ Drive delete failed — retry?'
                      : '';
@@ -4456,22 +4456,65 @@ async function driveUploadFile(file) {
 
   try {
     await driveEnsureFolder();
+
+    // ── Step 1: Initiate a resumable upload session ──────────────────────────
+    // Resumable uploads work for any file size and any file type (including
+    // PDF, HTML, ZIP, images, etc.) unlike the 5 MB–capped multipart endpoint.
+    const mimeType = file.type || 'application/octet-stream';
     const meta = JSON.stringify({ name: file.name, parents: [driveFolderId] });
-    const form = new FormData();
-    form.append('metadata', new Blob([meta], { type: 'application/json' }));
-    form.append('file', file);
-    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${driveAccessToken}` },
-      body: form
+
+    const initRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${driveAccessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+          'X-Upload-Content-Type': mimeType,
+          'X-Upload-Content-Length': file.size
+        },
+        body: meta
+      }
+    );
+
+    if (!initRes.ok) {
+      const errText = await initRes.text().catch(() => initRes.status);
+      throw new Error(`Upload init failed (${initRes.status}): ${errText}`);
+    }
+
+    // The Location header contains the upload session URI.
+    const uploadUrl = initRes.headers.get('Location');
+    if (!uploadUrl) throw new Error('Drive did not return an upload session URL.');
+
+    // ── Step 2: Upload the file bytes in a single PUT ────────────────────────
+    // For very large files this could be chunked, but a single PUT works for
+    // any file the browser can read into memory (Drive's resumable API accepts
+    // the full body in one shot with no upper size limit on our end).
+    const fileBuffer = await file.arrayBuffer();
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': mimeType,
+        'Content-Length': file.size
+      },
+      body: fileBuffer
     });
-    if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-    const data = await res.json();
+
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text().catch(() => uploadRes.status);
+      throw new Error(`Upload failed (${uploadRes.status}): ${errText}`);
+    }
+
+    // Drive returns 200 or 201 with the file resource when complete.
+    const data = await uploadRes.json();
     taskDriveAttachments[idx].status      = 'done';
     taskDriveAttachments[idx].driveFileId = data.id;
     taskDriveAttachments[idx].driveUrl    = data.webViewLink;
   } catch (e) {
-    taskDriveAttachments[idx].status = 'error';
+    console.error('[Drive upload error]', e);
+    taskDriveAttachments[idx].status      = 'error';
+    taskDriveAttachments[idx].errorDetail = e.message || 'Unknown error';
   }
   renderDriveFileList();
 }
