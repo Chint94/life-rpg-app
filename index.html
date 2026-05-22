@@ -142,7 +142,7 @@ body{font-family:'Exo 2',sans-serif;color:var(--text-main);overscroll-behavior:n
 .empty-state .empty-icon{font-size:40px;margin-bottom:10px;display:block;opacity:0.5;}
 .empty-state p{font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:1px;}
 
-/* ── LIFE ROLES SCREEN ── */
+/* ── ROLES & RESPONSIBILITIES SCREEN ── */
 .role-card{background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden;transition:all .2s;}
 .role-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px;}
 .role-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
@@ -549,6 +549,23 @@ body.simple-mode .xp-pop{display:none!important;}
   .calendar-event-time{font-size:9px!important;}
 }
 
+
+/* ── HQ OVERVIEW + NOTES PROFESSIONAL UPDATE ── */
+.section-hdr.compact{margin:18px 0 10px;}
+.btn-view-all{font-size:10px;padding:6px 10px;border-radius:999px;}
+.btn-view-all.danger{background:linear-gradient(135deg,#fca5a5,#b42318)!important;color:#fff!important;}
+.hq-task-overview{display:grid;grid-template-columns:1fr;gap:14px;margin:14px 0 16px;}
+.hq-list-section{background:linear-gradient(145deg,rgba(255,255,255,.74),rgba(255,237,160,.58));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:12px;box-shadow:0 8px 22px rgba(126,83,0,.10);}
+.hq-list-section .section-title{font-size:12px;letter-spacing:1.2px;}
+.hq-mini-list{display:grid;gap:8px;}
+.hq-list-note{font-family:'Rajdhani',sans-serif;font-size:12px;color:#7b5b00;letter-spacing:.5px;padding:6px 2px 0;}
+.task-notes-area{min-height:130px!important;resize:vertical!important;line-height:1.55!important;white-space:pre-wrap;}
+.form-help-text{font-size:11px;color:#7b5b00;margin-top:6px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.4px;}
+.task-notes-preview{margin-top:10px;background:rgba(255,255,255,.55);border:1px solid rgba(126,83,0,.14);border-radius:12px;padding:10px 12px;color:#4a3300;font-size:13px;line-height:1.45;white-space:pre-wrap;}
+.task-notes-preview-title{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#7a4d00;margin-bottom:4px;}
+.section-title{font-weight:900!important;letter-spacing:1.7px!important;}
+@media (min-width:900px){.hq-task-overview{grid-template-columns:1fr 1fr;}.hq-list-section .task-mini{margin-bottom:0;}}
+
 </style>
 </head>
 <body>
@@ -679,6 +696,24 @@ body.simple-mode .xp-pop{display:none!important;}
           </div>
         </div>
 
+        <!-- All Pending / Overdue Overview -->
+        <div class="hq-task-overview" id="hq-task-overview">
+          <div class="hq-list-section">
+            <div class="section-hdr compact">
+              <span class="section-title">PENDING TASKS — ALL WEEKS</span>
+              <button class="btn-add btn-view-all" onclick="openTaskStatus('pending')">VIEW ALL</button>
+            </div>
+            <div id="hq-pending-all-list"></div>
+          </div>
+          <div class="hq-list-section">
+            <div class="section-hdr compact">
+              <span class="section-title">OVERDUE TASKS — ALL WEEKS</span>
+              <button class="btn-add btn-view-all danger" onclick="openTaskStatus('overdue')">VIEW ALL</button>
+            </div>
+            <div id="hq-overdue-all-list"></div>
+          </div>
+        </div>
+
         <!-- Streak Banner -->
         <div class="streak-banner" id="streak-banner">
           <span class="streak-icon">🔥</span>
@@ -690,17 +725,17 @@ body.simple-mode .xp-pop{display:none!important;}
 
         <!-- Today's Tasks -->
         <div class="section-hdr">
-          <span class="section-title">TODAY'S TASKS</span>
+          <span class="section-title">TODAY'S PRIORITIES</span>
           <button class="btn-add" onclick="openTaskModal()">+ ADD</button>
         </div>
         <div id="today-tasks-list"></div>
       </div>
     </div>
 
-    <!-- LIFE ROLES -->
+    <!-- ROLES & RESPONSIBILITIES -->
     <div class="screen" id="screen-roles">
       <div class="section-hdr">
-        <span class="section-title">LIFE ROLES</span>
+        <span class="section-title">ROLES & RESPONSIBILITIES</span>
         <button class="btn-add" onclick="openRoleModal()">+ ADD ROLE</button>
       </div>
       <div id="roles-list"></div>
@@ -709,7 +744,7 @@ body.simple-mode .xp-pop{display:none!important;}
     <!-- TASKS -->
     <div class="screen" id="screen-tasks">
       <div class="section-hdr" style="margin-top:16px;">
-        <span class="section-title">ALL TASKS</span>
+        <span class="section-title">TASK MANAGEMENT</span>
         <button class="btn-add" onclick="openTaskModal()">+ ADD</button>
       </div>
       <div class="filter-row" id="task-filter-row">
@@ -727,7 +762,7 @@ body.simple-mode .xp-pop{display:none!important;}
     <div class="screen" id="screen-timeline">
       <!-- Focus Timer -->
       <div class="focus-timer-card">
-        <div class="timer-label">FOCUS TIMER</div>
+        <div class="timer-label">FOCUS SESSION</div>
         <div class="timer-display" id="timer-display">25:00</div>
         <div class="timer-presets">
           <div class="preset-btn active" onclick="setTimerPreset(25,this)">25m</div>
@@ -763,7 +798,7 @@ body.simple-mode .xp-pop{display:none!important;}
       <!-- Write Tab -->
       <div id="journal-write">
         <div class="section-hdr" style="margin-top:0;">
-          <span class="section-title">HOW ARE YOU FEELING?</span>
+          <span class="section-title">DAILY REFLECTION</span>
         </div>
         <div class="mood-row">
           <div class="mood-btn" data-mood="😄" onclick="selectMood(this,'😄')">😄</div>
@@ -798,7 +833,7 @@ body.simple-mode .xp-pop{display:none!important;}
     <!-- SETTINGS -->
     <div class="screen" id="screen-settings">
       <div class="section-hdr" style="margin-top:16px;">
-        <span class="section-title">SETTINGS & GUIDE</span>
+        <span class="section-title">SETTINGS & USER GUIDE</span>
       </div>
       <div class="settings-card">
         <h3>🧙 Hero & XP</h3>
@@ -814,12 +849,12 @@ body.simple-mode .xp-pop{display:none!important;}
       </div>
       <div class="settings-card">
         <h3>🏠 Headquarters</h3>
-        <p>Headquarters shows today’s tasks plus this week’s pending and overdue task counts. The week starts every Monday and ends every Sunday. Tap Pending This Week, Overdue This Week, or Completed to jump directly into the filtered task list.</p>
+        <p>Headquarters shows today’s priorities, this week’s pending/overdue counts, and separate all-weeks Pending Tasks and Overdue Tasks sections. The week starts every Monday and ends every Sunday.</p>
       </div>
       <div class="settings-card">
         <h3>✅ Tasks</h3>
         <ul>
-          <li>Add tasks with start date, start time, end time, priority, role, recurrence, and sub-steps.</li>
+          <li>Add tasks with start date, start time, end time, priority, role, recurrence, and notes.</li>
           <li>Pending means the task is not complete and its scheduled end time has not passed.</li>
           <li>Overdue means the task is not complete and its scheduled date/time has passed.</li>
         </ul>
@@ -935,7 +970,7 @@ body.simple-mode .xp-pop{display:none!important;}
 <div class="modal-overlay" id="task-modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="task-modal-title">NEW TASK</div>
+    <div class="modal-title" id="task-modal-title">CREATE NEW TASK</div>
     <div class="form-group">
       <label class="form-label">Task Name</label>
       <input class="form-input" id="task-title" placeholder="What needs to be done?"/>
@@ -978,9 +1013,9 @@ body.simple-mode .xp-pop{display:none!important;}
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Sub-steps (optional)</label>
-      <div class="steps-input-list" id="steps-input-list"></div>
-      <button type="button" class="btn-add-step" onclick="addStepInput()">+ ADD STEP</button>
+      <label class="form-label">Notes</label>
+      <textarea class="form-input task-notes-area" id="task-notes" placeholder="Add notes, context, links, or reminders. Press Enter on mobile, or Shift + Enter on laptop, to add a new line."></textarea>
+      <div class="form-help-text">Tip: Shift + Enter adds a new line on laptop. Enter adds a new line on mobile.</div>
     </div>
     <div class="form-group">
       <label class="form-label">Recurrence</label>
@@ -1296,7 +1331,7 @@ window.switchScreen = (name, navEl) => {
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
   document.getElementById('main-content').scrollTop = 0;
-  const titles = { dashboard: '🏠 HEADQUARTERS', tasks: '✅ TASKS', timeline: '⏱️ TIMELINE', journal: '📓 JOURNAL', roles: '🎭 LIFE ROLES', settings: '⚙️ SETTINGS' };
+  const titles = { dashboard: '🏠 HEADQUARTERS', tasks: '✅ TASK MANAGEMENT', timeline: '⏱️ DAILY TIMELINE', journal: '📓 REFLECTION JOURNAL', roles: '🎭 ROLES & RESPONSIBILITIES', settings: '⚙️ SETTINGS & GUIDE' };
   document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
   if (name === 'tasks') renderTasks();
@@ -1595,6 +1630,8 @@ function renderDashboard() {
     document.getElementById('streak-desc').textContent = streak === 1 ? 'Great start! Keep it going!' : `${streak} days strong. Don't break the chain!`;
   }
 
+  renderHQTaskOverview();
+
   // Today's tasks
   const today = new Date();
   const todayTasks = Object.values(tasks)
@@ -1608,6 +1645,31 @@ function renderDashboard() {
     return;
   }
   list.innerHTML = todayTasks.map(t => buildTaskMiniHTML(t)).join('');
+}
+
+function renderHQTaskOverview() {
+  const pendingList = document.getElementById('hq-pending-all-list');
+  const overdueList = document.getElementById('hq-overdue-all-list');
+  if (!pendingList || !overdueList) return;
+
+  const sorter = (a, b) => {
+    const ad = taskDateTime(a, 'start');
+    const bd = taskDateTime(b, 'start');
+    const diff = ad - bd;
+    if (diff !== 0) return diff;
+    return (timeToMinutes(a.startTime) ?? 9999) - (timeToMinutes(b.startTime) ?? 9999);
+  };
+
+  const pendingAll = Object.values(tasks).filter(t => isTaskPending(t)).sort(sorter);
+  const overdueAll = Object.values(tasks).filter(t => isTaskOverdue(t)).sort(sorter);
+
+  pendingList.innerHTML = pendingAll.length
+    ? `<div class="hq-mini-list">${pendingAll.slice(0, 5).map(t => buildTaskMiniHTML(t)).join('')}</div>${pendingAll.length > 5 ? `<div class="hq-list-note">+${pendingAll.length - 5} more pending task(s). Tap View All.</div>` : ''}`
+    : `<div class="empty-state"><span class="empty-icon">✅</span><p>No pending tasks.</p></div>`;
+
+  overdueList.innerHTML = overdueAll.length
+    ? `<div class="hq-mini-list">${overdueAll.slice(0, 5).map(t => buildTaskMiniHTML(t)).join('')}</div>${overdueAll.length > 5 ? `<div class="hq-list-note">+${overdueAll.length - 5} more overdue task(s). Tap View All.</div>` : ''}`
+    : `<div class="empty-state"><span class="empty-icon">🎯</span><p>No overdue tasks.</p></div>`;
 }
 
 function buildTaskMiniHTML(t) {
@@ -1854,12 +1916,7 @@ function buildTaskCardHTML(t) {
     const label = diff < 0 ? `${Math.abs(diff)}d overdue` : diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : `${diff}d left`;
     deadlineHTML = `<span class="deadline-badge ${cls}">📅 ${label}</span>`;
   }
-  const stepsHTML = t.steps && t.steps.length > 0 ? `<div class="steps-list">${t.steps.map((s, i) =>
-    `<div class="step-item" onclick="toggleStep('${t.id}',${i})">
-      <div class="step-check ${s.done ? 'done' : ''}"></div>
-      <span class="step-name ${s.done ? 'done' : ''}">${escHtml(s.name)}</span>
-    </div>`
-  ).join('')}</div>` : '';
+  const notesHTML = t.notes ? `<div class="task-notes-preview"><div class="task-notes-preview-title">Notes</div>${escHtml(t.notes)}</div>` : '';
 
   return `<div class="task-card ${t.completed ? 'completed' : ''}" style="border-left:3px solid ${pColors[t.priority]||'#6b7299'}">
     <div class="task-top">
@@ -1875,7 +1932,7 @@ function buildTaskCardHTML(t) {
         </div>
       </div>
     </div>
-    ${stepsHTML}
+    ${notesHTML}
     <div class="task-actions">
       <button class="btn-task-sm" onclick="openTaskModal('${t.id}')">✏️ EDIT</button>
       <button class="btn-task-sm del" onclick="deleteTask('${t.id}')">🗑 DELETE</button>
@@ -1959,10 +2016,11 @@ window.setTaskFilter = (f) => {
 
 window.openTaskModal = (id = null) => {
   editingTaskId = id;
-  document.getElementById('task-modal-title').textContent = id ? 'EDIT TASK' : 'NEW TASK';
+  document.getElementById('task-modal-title').textContent = id ? 'EDIT TASK DETAILS' : 'CREATE NEW TASK';
   const deleteBtn = document.getElementById('task-modal-delete');
   if (deleteBtn) deleteBtn.classList.toggle('hidden', !id);
-  document.getElementById('steps-input-list').innerHTML = '';
+  const notesEl = document.getElementById('task-notes');
+  if (notesEl) notesEl.value = '';
   if (id && tasks[id]) {
     const t = tasks[id];
     document.getElementById('task-title').value = t.title;
@@ -1980,7 +2038,7 @@ window.openTaskModal = (id = null) => {
     setCustomWeekdays(t.customWeekdays || []);
     setWeeklyWeekdays(t.weeklyWeekdays || []);
     updateRecurrenceFields();
-    if (t.steps) t.steps.forEach(s => addStepInput(s.name));
+    if (notesEl) notesEl.value = t.notes || '';
   } else {
     document.getElementById('task-title').value = '';
     document.getElementById('task-role').value = '';
@@ -2055,14 +2113,7 @@ window.saveTask = async () => {
 
     const existingId = editingTaskId;
     const taskId = existingId || newLocalId('task');
-    const existingSteps = existingId && tasks[existingId]?.steps ? tasks[existingId].steps : [];
-    const steps = [...document.querySelectorAll('#steps-input-list .form-input')]
-      .map((input, idx) => {
-        const name = input.value.trim();
-        const oldStep = existingSteps[idx];
-        return name ? { name, done: !!oldStep?.done } : null;
-      })
-      .filter(Boolean);
+    const notes = document.getElementById('task-notes')?.value || '';
 
     const startDate = document.getElementById('task-start-date')?.value || document.getElementById('task-deadline')?.value || null;
     const recurrence = document.getElementById('task-recurrence')?.value || 'none';
@@ -2082,7 +2133,8 @@ window.saveTask = async () => {
       customUnit: document.getElementById('task-custom-unit')?.value || 'days',
       weeklyWeekdays: recurrence === 'weekly' ? getWeeklyWeekdays() : [],
       customWeekdays: recurrence === 'custom' ? getCustomWeekdays() : [],
-      steps,
+      notes,
+      steps: [],
       completed: tasks[taskId]?.completed || false,
       completedAt: tasks[taskId]?.completedAt || null,
       createdAtLocal: tasks[taskId]?.createdAtLocal || new Date().toISOString(),
@@ -2112,7 +2164,8 @@ window.saveTask = async () => {
           customUnit: localData.customUnit,
           weeklyWeekdays: localData.weeklyWeekdays,
           customWeekdays: localData.customWeekdays,
-          steps: localData.steps,
+          notes: localData.notes,
+          steps: [],
           completed: localData.completed,
           completedAt: localData.completedAt,
           createdAtLocal: localData.createdAtLocal,
@@ -2127,6 +2180,15 @@ window.saveTask = async () => {
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = originalText || 'SAVE TASK'; }
   }
 };
+
+
+// Notes textarea: Enter creates a new line on mobile and Shift + Enter works on laptop by default.
+document.addEventListener('keydown', (event) => {
+  if (event.target && event.target.id === 'task-notes' && event.key === 'Enter') {
+    // Keep the browser's native textarea newline behavior.
+    return;
+  }
+});
 
 // ─────────────────────────────────────────────
 // TIMELINE
@@ -2343,7 +2405,7 @@ window.timelineDrop = async (event) => {
 };
 
 // ─────────────────────────────────────────────
-// FOCUS TIMER
+// FOCUS SESSION
 // ─────────────────────────────────────────────
 window.setTimerPreset = (mins, el) => {
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
