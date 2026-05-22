@@ -2953,7 +2953,12 @@ async function updateStreak() {
   if (userData.lastActiveDate === today) return;
   const yesterday = new Date(Date.now() - 86400000).toDateString();
   let newStreak = userData.lastActiveDate === yesterday ? (userData.streak || 0) + 1 : 1;
-  if (Object.values(tasks).some(t => t.completed)) {
+  const todayStr = toDateStr(new Date());
+  const hasAnyDone = Object.values(tasks).some(t => {
+    const isRecurring = t.recurrence && t.recurrence !== 'none';
+    return isRecurring ? (t.completedDates || []).includes(todayStr) : !!t.completed;
+  });
+  if (hasAnyDone) {
     await setDoc(doc(db, 'users', currentUser.uid), { streak: newStreak, lastActiveDate: today }, { merge: true });
   }
 }
@@ -3166,6 +3171,44 @@ function isTaskForDate(t, date) {
   return baseDay.getTime() === target.getTime();
 }
 
+// ─────────────────────────────────────────────
+// PER-OCCURRENCE COMPLETION HELPERS
+// ─────────────────────────────────────────────
+// Returns ISO date string "YYYY-MM-DD" for a date value
+function toDateStr(date) {
+  const d = (date instanceof Date) ? date : new Date(date);
+  return d.toISOString().slice(0, 10);
+}
+
+// Is this specific date-occurrence of a recurring task completed?
+function isOccurrenceComplete(t, date) {
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  if (!isRecurring) return !!t.completed; // non-recurring: use global flag
+  const ds = toDateStr(date);
+  return !!(t.completedDates || []).includes(ds);
+}
+
+// Is this specific date-occurrence pending (not complete, not overdue)?
+function isOccurrencePending(t, date) {
+  if (!isTaskForDate(t, date)) return false;
+  return !isOccurrenceComplete(t, date);
+}
+
+// Has every occurrence up to today been completed (used for "Repeat Series" trigger)?
+function allOccurrencesComplete(t) {
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  if (!isRecurring) return !!t.completed;
+  // If global completed flag is set (legacy / manually set), honour it
+  if (t.completed) return true;
+  // Check if recurrenceEndDate is set and past
+  if (t.recurrenceEndDate) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const end = startOfDay(parseDateOnly(t.recurrenceEndDate));
+    if (end && today > end) return true;
+  }
+  return false;
+}
+
 function taskDateTime(t, which = 'end') {
   const base = parseDateOnly(t.startDate || t.deadline) || startOfDay(new Date());
   const mins = timeToMinutes(which === 'start' ? t.startTime : (t.endTime || t.startTime));
@@ -3176,18 +3219,26 @@ function taskDateTime(t, which = 'end') {
   return d;
 }
 function isTaskOverdue(t, ref = new Date()) {
-  if (t.completed) return false;
-  if (t.recurrence && t.recurrence !== 'none') {
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  if (isRecurring) {
+    // For recurring: overdue if today's occurrence exists, is not complete, and end time has passed
     if (!isTaskForDate(t, ref)) return false;
+    if (isOccurrenceComplete(t, ref)) return false;
     const endMin = timeToMinutes(t.endTime || t.startTime);
     if (endMin === null) return false;
     const end = new Date(ref);
     end.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
     return ref > end;
   }
+  if (t.completed) return false;
   return ref > taskDateTime(t, 'end');
 }
 function isTaskPending(t, ref = new Date()) {
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  if (isRecurring) {
+    if (!isTaskForDate(t, ref)) return false;
+    return !isOccurrenceComplete(t, ref) && !isTaskOverdue(t, ref);
+  }
   return !t.completed && !isTaskOverdue(t, ref);
 }
 function weekBounds(ref = new Date()) {
@@ -3212,13 +3263,32 @@ function taskOccursInRange(t, start, end) {
   return false;
 }
 function taskIsPendingThisWeek(t) {
-  if (t.completed) return false;
   const { start, end } = weekBounds(new Date());
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  if (isRecurring) {
+    // Check each day of this week for an incomplete occurrence
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      if (isTaskForDate(t, cursor) && !isOccurrenceComplete(t, cursor)) return true;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return false;
+  }
+  if (t.completed) return false;
   return taskOccursInRange(t, start, end) && !isTaskOverdue(t);
 }
 function taskIsOverdueThisWeek(t) {
-  if (t.completed) return false;
   const { start, end } = weekBounds(new Date());
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  if (isRecurring) {
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      if (isTaskForDate(t, cursor) && isTaskOverdue(t, cursor)) return true;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return false;
+  }
+  if (t.completed) return false;
   return taskOccursInRange(t, start, end) && isTaskOverdue(t);
 }
 window.openTaskStatus = (status) => {
@@ -3271,10 +3341,15 @@ window.resetHeroXP = async () => {
 function renderTaskInsights() {
   const allTasks = Object.values(tasks || {});
   const total = allTasks.length;
-  const completed = allTasks.filter(t => t.completed).length;
+  const today = new Date();
+  // For recurring: count completed if today's occurrence is done; one-time: global flag
+  const completed = allTasks.filter(t => {
+    const isRecurring = t.recurrence && t.recurrence !== 'none';
+    return isRecurring ? isOccurrenceComplete(t, today) : !!t.completed;
+  }).length;
   const overdue = allTasks.filter(t => isTaskOverdue(t)).length;
   const pending = allTasks.filter(t => isTaskPending(t)).length;
-  const today = allTasks.filter(t => isTaskForDate(t, new Date()) && !t.completed).length;
+  const todayCount = allTasks.filter(t => isTaskForDate(t, today) && !isOccurrenceComplete(t, today) && !t.completed).length;
   const completionPct = total ? Math.round((completed / total) * 100) : 0;
 
   const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
@@ -3283,7 +3358,7 @@ function renderTaskInsights() {
   setText('insight-completed', completed);
   setText('insight-pending', pending);
   setText('insight-overdue', overdue);
-  setText('insight-today', today);
+  setText('insight-today', todayCount);
 
   const donut = document.getElementById('task-donut');
   if (donut) {
@@ -3341,7 +3416,11 @@ function renderDashboard() {
   if (heroClassInput) heroClassInput.value = userData.customHeroClass || '';
   document.getElementById('user-avatar').textContent = heroEmoji;
 
+  // Completed today: for recurring tasks count if today's occurrence is done; for one-time use completedAt
+  const todayDateStr = toDateStr(new Date());
   const completedToday = Object.values(tasks).filter(t => {
+    const isRecurring = t.recurrence && t.recurrence !== 'none';
+    if (isRecurring) return (t.completedDates || []).includes(todayDateStr);
     if (!t.completedAt) return false;
     return new Date(t.completedAt).toDateString() === new Date().toDateString();
   }).length;
@@ -3351,7 +3430,11 @@ function renderDashboard() {
   if (statRoles) statRoles.textContent = Object.keys(roles).length;
   const pendingCount = Object.values(tasks).filter(t => taskIsPendingThisWeek(t)).length;
   const overdueCount = Object.values(tasks).filter(t => taskIsOverdueThisWeek(t)).length;
-  const completedCount = Object.values(tasks).filter(t => t.completed).length;
+  // For recurring tasks: count as "completed" if today's occurrence is done; for one-time: use global flag
+  const completedCount = Object.values(tasks).filter(t => {
+    const isRecurring = t.recurrence && t.recurrence !== 'none';
+    return isRecurring ? isOccurrenceComplete(t, new Date()) : !!t.completed;
+  }).length;
   const pendingEl = document.getElementById('stat-pending');
   const overdueEl = document.getElementById('stat-overdue');
   const completedEl = document.getElementById('stat-completed');
@@ -3413,14 +3496,21 @@ function renderHQTaskOverview() {
 function buildTaskMiniHTML(t) {
   const role = t.roleId && roles[t.roleId];
   const roleColor = role ? role.color : '#6b7299';
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  const todayStr = toDateStr(new Date());
+  const isDoneToday = isRecurring ? isOccurrenceComplete(t, new Date()) : !!t.completed;
+  const toggleCall = isRecurring
+    ? `toggleTask('${t.id}',event,'${todayStr}')`
+    : `toggleTask('${t.id}',event)`;
   return `<div class="task-mini" id="mini-${t.id}">
-    <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask('${t.id}',event)"></div>
+    <div class="task-check ${isDoneToday ? 'done' : ''}" onclick="${toggleCall}"></div>
     <div class="task-mini-info">
-      <div class="task-mini-title ${t.completed ? 'done' : ''}">${escHtml(t.title)}</div>
+      <div class="task-mini-title ${isDoneToday ? 'done' : ''}">${escHtml(t.title)}</div>
       <div class="task-mini-meta">
         ${role ? `<span class="role-badge" style="background:${roleColor}22;color:${roleColor}">${role.emoji} ${escHtml(role.name)}</span>` : ''}
         <span class="xp-badge gamified">+${t.xp} XP</span>
         ${formatTimeRange(t) ? `<span class="quest-time-badge">⏰ ${formatTimeRange(t)}</span>` : ''}
+        ${isRecurring ? `<span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif">🔄 ${recurrenceLabel(t)}</span>` : ''}
       </div>
     </div>
   </div>`;
@@ -3646,6 +3736,12 @@ function buildTaskCardHTML(t) {
   const roleColor = role ? role.color : '#6b7299';
   const pColors = { high: '#ef4444', medium: '#f97316', low: '#22c55e' };
   const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  // For display: use per-occurrence done state for recurring, global for one-time
+  const isDoneToday = isRecurring ? isOccurrenceComplete(t, today) : !!t.completed;
+
   let deadlineHTML = '';
   if (t.deadline) {
     const d = new Date(t.deadline);
@@ -3656,28 +3752,36 @@ function buildTaskCardHTML(t) {
   }
   const notesHTML = t.notes ? `<div class="task-notes-preview"><div class="task-notes-preview-title">Notes</div>${escHtml(t.notes)}</div>` : '';
 
-  // Show "Repeat Series" badge when task is recurring and completed or past its end date
-  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  // Completed-dates count badge for recurring
+  const doneCount = isRecurring ? (t.completedDates || []).length : 0;
+  const doneCountBadge = isRecurring && doneCount > 0
+    ? `<span style="font-size:10px;color:var(--green);font-family:'Rajdhani',sans-serif">✅ ${doneCount} done</span>`
+    : '';
+
+  // Show "Repeat Series" badge when recurring and all series done / past end
   const isPastEnd = t.recurrenceEndDate && today > startOfDay(parseDateOnly(t.recurrenceEndDate));
-  const showRepeat = isRecurring && (t.completed || isPastEnd);
+  const showRepeat = isRecurring && (allOccurrencesComplete(t) || isPastEnd);
   const repeatBadge = showRepeat
     ? `<span class="repeat-series-badge" onclick="openRecurRepeatModal('${t.id}')">🔁 REPEAT SERIES</span>`
     : '';
 
-  // Pass today's date string for occurrence-level delete context
-  const todayStr = today.toISOString().slice(0, 10);
+  // toggleTask call — pass dateStr for recurring
+  const toggleCall = isRecurring
+    ? `toggleTask('${t.id}',event,'${todayStr}')`
+    : `toggleTask('${t.id}',event)`;
 
-  return `<div class="task-card ${t.completed ? 'completed' : ''}" style="border-left:3px solid ${pColors[t.priority]||'#6b7299'}">
+  return `<div class="task-card ${isDoneToday ? 'completed' : ''}" style="border-left:3px solid ${pColors[t.priority]||'#6b7299'}">
     <div class="task-top">
-      <div class="task-check-lg ${t.completed ? 'done' : ''}" onclick="toggleTask('${t.id}',event)"></div>
+      <div class="task-check-lg ${isDoneToday ? 'done' : ''}" onclick="${toggleCall}"></div>
       <div class="task-info">
-        <div class="task-title ${t.completed ? 'done' : ''}">${escHtml(t.title)}</div>
+        <div class="task-title ${isDoneToday ? 'done' : ''}">${escHtml(t.title)}</div>
         <div class="task-meta-row">
           ${role ? `<span class="role-badge" style="background:${roleColor}22;color:${roleColor}">${role.emoji} ${escHtml(role.name)}</span>` : ''}
           <span class="xp-badge gamified">+${t.xp} XP</span>
           ${formatTimeRange(t) ? `<span class="quest-time-badge">⏰ ${formatTimeRange(t)}</span>` : ''}
           ${deadlineHTML}
           ${recurrenceLabel(t) ? `<span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif">🔄 ${recurrenceLabel(t)}</span>` : ''}
+          ${doneCountBadge}
           ${t.gcalSynced ? `<span class="gcal-badge">📅 GCal</span>` : ''}
           ${repeatBadge}
         </div>
@@ -3691,36 +3795,77 @@ function buildTaskCardHTML(t) {
   </div>`;
 }
 
-window.toggleTask = async (id, event) => {
+window.toggleTask = async (id, event, dateStr) => {
   event?.stopPropagation?.();
   const t = tasks[id];
   if (!t) return;
   const uid = currentUser?.uid;
-  const newDone = !t.completed;
-  tasks[id] = { ...t, completed: newDone, completedAt: newDone ? new Date().toISOString() : null };
-  persistLocalState();
-  renderAllLocal();
-  try {
-    if (uid) {
-      await updateDoc(doc(db, 'users', uid, 'tasks', id), {
-        completed: newDone,
-        completedAt: newDone ? tasks[id].completedAt : null
-      });
-    }
-    if (newDone) {
-      const el = event?.currentTarget;
-      await addXP(t.xp || 10, t.roleId, el);
-      await updateStreak();
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+
+  if (isRecurring) {
+    // Per-occurrence toggle
+    const ds = dateStr || toDateStr(new Date());
+    const completedDates = [...(t.completedDates || [])];
+    const alreadyDone = completedDates.includes(ds);
+    let updatedDates;
+    if (alreadyDone) {
+      updatedDates = completedDates.filter(d => d !== ds);
     } else {
-      const newTotal = Math.max(0, (userData.totalXP || 0) - (t.xp || 10));
-      userData.totalXP = newTotal;
-      userData.level = calcLevel(newTotal);
-      persistLocalState();
-      renderDashboard();
-      if (uid) await setDoc(doc(db, 'users', uid), { totalXP: newTotal, level: calcLevel(newTotal) }, { merge: true });
+      updatedDates = [...completedDates, ds];
     }
-  } catch (e) {
-    showSaveError('Task completion', e);
+    tasks[id] = { ...t, completedDates: updatedDates, updatedAtLocal: new Date().toISOString() };
+    persistLocalState();
+    renderAllLocal();
+    try {
+      if (uid) {
+        await updateDoc(doc(db, 'users', uid, 'tasks', id), {
+          completedDates: updatedDates,
+          updatedAt: serverTimestamp()
+        });
+      }
+      if (!alreadyDone) {
+        const el = event?.currentTarget;
+        await addXP(t.xp || 10, t.roleId, el);
+        await updateStreak();
+      } else {
+        const newTotal = Math.max(0, (userData.totalXP || 0) - (t.xp || 10));
+        userData.totalXP = newTotal;
+        userData.level = calcLevel(newTotal);
+        persistLocalState();
+        renderDashboard();
+        if (uid) await setDoc(doc(db, 'users', uid), { totalXP: newTotal, level: calcLevel(newTotal) }, { merge: true });
+      }
+    } catch (e) {
+      showSaveError('Task completion', e);
+    }
+  } else {
+    // Non-recurring: global toggle (original behaviour)
+    const newDone = !t.completed;
+    tasks[id] = { ...t, completed: newDone, completedAt: newDone ? new Date().toISOString() : null };
+    persistLocalState();
+    renderAllLocal();
+    try {
+      if (uid) {
+        await updateDoc(doc(db, 'users', uid, 'tasks', id), {
+          completed: newDone,
+          completedAt: newDone ? tasks[id].completedAt : null
+        });
+      }
+      if (newDone) {
+        const el = event?.currentTarget;
+        await addXP(t.xp || 10, t.roleId, el);
+        await updateStreak();
+      } else {
+        const newTotal = Math.max(0, (userData.totalXP || 0) - (t.xp || 10));
+        userData.totalXP = newTotal;
+        userData.level = calcLevel(newTotal);
+        persistLocalState();
+        renderDashboard();
+        if (uid) await setDoc(doc(db, 'users', uid), { totalXP: newTotal, level: calcLevel(newTotal) }, { merge: true });
+      }
+    } catch (e) {
+      showSaveError('Task completion', e);
+    }
   }
 };
 
@@ -3924,7 +4069,8 @@ window.rrConfirmRepeat = async () => {
     startDate:         t.startDate   || t.deadline,
     recurrenceEndDate: t.recurrenceEndDate || null,
     recurrence:        t.recurrence,
-    skippedDates:      t.skippedDates || [],
+    skippedDates:      t.skippedDates    || [],
+    completedDates:    t.completedDates  || [],
     completed:         t.completed,
     completedAt:       t.completedAt || null,
   };
@@ -3947,6 +4093,7 @@ window.rrConfirmRepeat = async () => {
     customWeekdays:    (newRecurrence === 'custom' && newCustomType === 'weekdays') ? rrGetChips('rr-custom-weekdays') : (t.customWeekdays || []),
     intervalWeekdays:  t.intervalWeekdays || [],
     skippedDates:      [],       // fresh slate for new period
+    completedDates:    [],       // fresh slate for new period
     completed:         false,
     completedAt:       null,
     recurrenceHistory: history,
@@ -3976,6 +4123,7 @@ window.rrConfirmRepeat = async () => {
         customWeekdays:    updated.customWeekdays,
         intervalWeekdays:  updated.intervalWeekdays,
         skippedDates:      [],
+        completedDates:    [],
         completed:         false,
         completedAt:       null,
         recurrenceHistory: history,
@@ -4043,21 +4191,23 @@ window.openTaskModal = (id = null) => {
     updateRecurrenceFields();
     if (notesEl) notesEl.value = t.notes || '';
 
-    // Show repeat button if recurring and completed or past end date
+    // Show repeat button if recurring and all series done / past end
     const isRecurring = t.recurrence && t.recurrence !== 'none';
     const today = new Date(); today.setHours(0,0,0,0);
     const isPastEnd = t.recurrenceEndDate && today > startOfDay(parseDateOnly(t.recurrenceEndDate));
-    const showRepeat = isRecurring && (t.completed || isPastEnd);
+    const showRepeat = isRecurring && (allOccurrencesComplete(t) || isPastEnd);
     repeatBtn.classList.toggle('hidden', !showRepeat);
 
     // Show history note
-    const histCount = (t.recurrenceHistory || []).length;
+    const histCount    = (t.recurrenceHistory || []).length;
     const skippedCount = (t.skippedDates || []).length;
-    if (isRecurring && (histCount > 0 || skippedCount > 0)) {
+    const doneCount    = (t.completedDates || []).length;
+    if (isRecurring && (histCount > 0 || skippedCount > 0 || doneCount > 0)) {
       historyLine.classList.remove('hidden');
       const parts = [];
-      if (histCount > 0)    parts.push(`${histCount} previous period${histCount > 1 ? 's' : ''} archived`);
-      if (skippedCount > 0) parts.push(`${skippedCount} occurrence${skippedCount > 1 ? 's' : ''} skipped`);
+      if (doneCount > 0)    parts.push(`${doneCount} occurrence${doneCount > 1 ? 's' : ''} completed`);
+      if (skippedCount > 0) parts.push(`${skippedCount} skipped`);
+      if (histCount > 0)    parts.push(`${histCount} past period${histCount > 1 ? 's' : ''} archived`);
       historyLine.textContent = `📦 ${parts.join(' · ')}`;
     } else {
       historyLine.classList.add('hidden');
@@ -4301,6 +4451,7 @@ function renderTimeline() {
   }).join('');
   const lines = Array.from({length:25}, (_,h) => `<div class="calendar-hour-line" style="top:${h * hourHeight}px"></div>`).join('');
 
+  const selectedDateStr = toDateStr(selected);
   const eventHtml = events.map(t => {
     const top = (t._startMin / 60) * hourHeight;
     const height = Math.max(28, ((t._endMin - t._startMin) / 60) * hourHeight - 4);
@@ -4309,8 +4460,13 @@ function renderTimeline() {
     const left = `calc(${(t._col || 0) * (100 / cols)}% + 3px)`;
     const roleColor = t.roleId && roles[t.roleId] ? roles[t.roleId].color : '#b87600';
     const timeText = t.occurrenceTime ? `${t.occurrenceTime} · hourly` : (formatTimeRange(t) || 'Scheduled');
-    return `<div class="calendar-event ${t.completed ? 'done' : ''}" draggable="true" data-task-id="${t.id}" data-duration="${Math.max(15, t._endMin - t._startMin)}" style="top:${top}px;height:${height}px;left:${left};width:${width};border-left-color:${roleColor}" onclick="openTaskModal('${t.id}')" ondragstart="timelineDragStart(event,'${t.id}',${Math.max(15, t._endMin - t._startMin)})" ondragend="timelineDragEnd(event)" onpointerdown="timelinePointerDown(event,'${t.id}',${Math.max(15, t._endMin - t._startMin)})" title="Drag to move time · ${escHtml(t.title)}">
-      <div class="timeline-check ${t.completed ? 'done' : ''}" onclick="toggleTask('${t.id}',event)">${t.completed ? '✓' : ''}</div>
+    const isRecurring = t.recurrence && t.recurrence !== 'none';
+    const isDoneOnDate = isRecurring ? isOccurrenceComplete(t, selected) : !!t.completed;
+    const toggleCall = isRecurring
+      ? `toggleTask('${t.id}',event,'${selectedDateStr}')`
+      : `toggleTask('${t.id}',event)`;
+    return `<div class="calendar-event ${isDoneOnDate ? 'done' : ''}" draggable="true" data-task-id="${t.id}" data-duration="${Math.max(15, t._endMin - t._startMin)}" style="top:${top}px;height:${height}px;left:${left};width:${width};border-left-color:${roleColor}" onclick="openTaskModal('${t.id}')" ondragstart="timelineDragStart(event,'${t.id}',${Math.max(15, t._endMin - t._startMin)})" ondragend="timelineDragEnd(event)" onpointerdown="timelinePointerDown(event,'${t.id}',${Math.max(15, t._endMin - t._startMin)})" title="Drag to move time · ${escHtml(t.title)}">
+      <div class="timeline-check ${isDoneOnDate ? 'done' : ''}" onclick="${toggleCall}">${isDoneOnDate ? '✓' : ''}</div>
       <div class="calendar-event-main">
         <div class="calendar-event-title">${escHtml(t.title)}</div>
         <div class="calendar-event-time">${escHtml(timeText)}</div>
