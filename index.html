@@ -649,6 +649,13 @@ body.simple-mode .xp-pop{display:none!important;}
 .drive-file-chip.delete-error{border-color:#e53e3e;background:rgba(229,62,62,.06);}
 .drive-file-chip.delete-error .drive-file-status{color:#e53e3e;}
 .drive-not-connected{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--text-dim);background:rgba(0,0,0,.04);border-radius:10px;padding:10px 12px;text-align:center;letter-spacing:.3px;}
+/* Mobile vs Desktop Drive visibility */
+.drive-desktop-only{display:block;}
+.drive-mobile-only{display:none;}
+@media (max-width:899px){
+  .drive-desktop-only{display:none!important;}
+  .drive-mobile-only{display:block;}
+}
 
 @media (max-width:899px){
   #bottom-nav{overflow-x:auto;}
@@ -1320,6 +1327,84 @@ body.simple-mode .xp-pop{display:none!important;}
   .task-donut::after { width: 68px !important; height: 68px !important; }
 }
 
+/* ── GOOGLE CALENDAR SYNC CARD ── */
+.gcal-sync-card { position: relative; overflow: hidden; }
+.gcal-sync-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #4285f4, #34a853, #fbbc05, #ea4335);
+  border-radius: 16px 16px 0 0;
+}
+.gcal-connect-btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; width: 100%; padding: 11px 14px;
+  border-radius: 11px; border: none; cursor: pointer;
+  font-family: 'Rajdhani', sans-serif; font-weight: 900;
+  font-size: 13px; letter-spacing: 0.9px;
+  background: linear-gradient(135deg, #4285f4, #1a73e8);
+  color: #fff; transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 14px rgba(66,133,244,0.28);
+  margin-bottom: 10px;
+}
+.gcal-connect-btn:hover { opacity: .88; }
+.gcal-connect-btn:active { transform: scale(.98); }
+.gcal-connect-btn:disabled { opacity: .5; cursor: not-allowed; }
+.gcal-connect-btn.connected {
+  background: linear-gradient(135deg, #34a853, #1e7e34) !important;
+  box-shadow: 0 4px 14px rgba(52,168,83,0.28) !important;
+}
+.gcal-sync-btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; width: 100%; padding: 11px 14px;
+  border-radius: 11px; border: none; cursor: pointer;
+  font-family: 'Rajdhani', sans-serif; font-weight: 900;
+  font-size: 13px; letter-spacing: 0.9px;
+  background: linear-gradient(135deg, #ffd84a, #b87600);
+  color: #201100; transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 14px rgba(126,83,0,0.20);
+}
+.gcal-sync-btn:hover { opacity: .88; }
+.gcal-sync-btn:active { transform: scale(.98); }
+.gcal-sync-btn:disabled { opacity: .5; cursor: not-allowed; }
+.gcal-status {
+  font-family: 'Rajdhani', sans-serif; font-size: 12px;
+  font-weight: 700; letter-spacing: .4px; line-height: 1.5;
+  padding: 8px 10px; border-radius: 9px; margin-top: 8px;
+  min-height: 18px; display: none;
+}
+.gcal-status.show { display: block; }
+.gcal-status.info  { background: rgba(66,133,244,.10); color: #1a5fb4; border: 1px solid rgba(66,133,244,.22); }
+.gcal-status.ok    { background: rgba(52,168,83,.10);  color: #1b5e33; border: 1px solid rgba(52,168,83,.22); }
+.gcal-status.warn  { background: rgba(184,118,0,.10);  color: #7a4d00; border: 1px solid rgba(184,118,0,.22); }
+.gcal-status.error { background: rgba(180,35,24,.08);  color: #7f1d1d; border: 1px solid rgba(180,35,24,.20); }
+.gcal-date-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+.gcal-date-row label {
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 800;
+  letter-spacing: .8px; color: #7b5b00; text-transform: uppercase;
+  display: block; margin-bottom: 4px;
+}
+.gcal-date-row input {
+  background: rgba(255,253,230,.92); border: 1px solid rgba(126,83,0,.22);
+  border-radius: 9px; padding: 8px 10px; color: #2b1a00;
+  font-family: 'Exo 2', sans-serif; font-size: 13px;
+  width: 100%; outline: none;
+}
+.gcal-date-row input:focus { border-color: #4285f4; box-shadow: 0 0 0 3px rgba(66,133,244,.12); }
+.gcal-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 900;
+  letter-spacing: .8px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(66,133,244,.14); color: #1a5fb4;
+  border: 1px solid rgba(66,133,244,.25); vertical-align: middle;
+  margin-left: 6px;
+}
+/* Mark gcal-sourced tasks in task cards */
+.task-card .gcal-badge, .task-mini .gcal-badge {
+  font-size: 9px; padding: 1px 6px;
+}
+
 </style>
 </head>
 <body>
@@ -1650,6 +1735,37 @@ body.simple-mode .xp-pop{display:none!important;}
         <h3>☁️ Sync</h3>
         <p>Tasks save locally first and then sync to Firebase when permissions and internet are available. Use the same login email on laptop and mobile for cross-device sync.</p>
       </div>
+
+      <!-- ── GOOGLE CALENDAR SYNC CARD ── -->
+      <div class="settings-card gcal-sync-card">
+        <h3>📅 Google Calendar Sync</h3>
+        <p>Pull events from your Google Calendar as tasks. Each event is pulled only once — duplicates are automatically skipped on future syncs.</p>
+
+        <!-- Connect button -->
+        <button class="gcal-connect-btn" id="gcal-connect-btn" onclick="gcalSignIn()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Connect Google Account
+        </button>
+
+        <!-- Date range picker — shown only when connected -->
+        <div id="gcal-date-section" style="display:none;">
+          <div class="gcal-date-row">
+            <div>
+              <label for="gcal-from">From Date</label>
+              <input type="date" id="gcal-from" />
+            </div>
+            <div>
+              <label for="gcal-to">To Date</label>
+              <input type="date" id="gcal-to" />
+            </div>
+          </div>
+          <button class="gcal-sync-btn" id="gcal-sync-btn" onclick="gcalSync()">
+            ↓ PULL EVENTS AS TASKS
+          </button>
+        </div>
+
+        <div class="gcal-status" id="gcal-status"></div>
+      </div>
     </div>
 
   </div><!-- end main-content -->
@@ -1845,21 +1961,29 @@ body.simple-mode .xp-pop{display:none!important;}
     <div class="form-group drive-attach-section" id="task-drive-section">
       <div class="drive-attach-header">
         <label>📎 Google Drive Attachments</label>
-        <button type="button" class="drive-auth-btn" id="drive-auth-btn" onclick="driveSignIn()">
+        <!-- Desktop only: Connect button -->
+        <button type="button" class="drive-auth-btn drive-desktop-only" id="drive-auth-btn" onclick="driveSignIn()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6.18 15L3.5 19.5h17L17.82 15H6.18zM12 3L3.5 17.5h3.68L12 9l4.82 8.5h3.68L12 3z"/></svg>
           Connect Google Drive
         </button>
       </div>
-      <div id="drive-not-connected" class="drive-not-connected">
+      <!-- Desktop only: not-connected message -->
+      <div id="drive-not-connected" class="drive-not-connected drive-desktop-only">
         Connect Google Drive above to attach files to this task. Files will be uploaded to a <strong>Command Centre Attachments</strong> folder in your Drive.
       </div>
-      <div id="drive-connected-ui" style="display:none;">
+      <!-- Desktop only: upload zone -->
+      <div id="drive-connected-ui" style="display:none;" class="drive-desktop-only">
         <div class="drive-upload-zone" id="drive-upload-zone"
           ondragover="driveDragOver(event)" ondragleave="driveDragLeave(event)" ondrop="driveDrop(event)">
           <input type="file" id="drive-file-input" multiple onchange="driveFilesSelected(event)" />
           <div class="drive-upload-hint">📂 Tap to choose files, or drag &amp; drop here</div>
         </div>
-        <div class="drive-file-list" id="drive-file-list"></div>
+      </div>
+      <!-- File list: visible on BOTH mobile and desktop -->
+      <div class="drive-file-list" id="drive-file-list"></div>
+      <!-- Mobile only: shown when there are no attachments yet -->
+      <div id="drive-mobile-empty" class="drive-not-connected drive-mobile-only" style="display:none;">
+        No Drive files attached to this task yet.
       </div>
     </div>
         <button type="button" class="btn-modal-save" onclick="saveTask()">SAVE TASK</button>
@@ -2776,6 +2900,7 @@ function buildTaskCardHTML(t) {
           ${formatTimeRange(t) ? `<span class="quest-time-badge">⏰ ${formatTimeRange(t)}</span>` : ''}
           ${deadlineHTML}
           ${recurrenceLabel(t) ? `<span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif">🔄 ${recurrenceLabel(t)}</span>` : ''}
+          ${t.gcalSynced ? `<span class="gcal-badge">📅 GCal</span>` : ''}
         </div>
       </div>
     </div>
@@ -3437,6 +3562,9 @@ updateRecurrenceFields();
 
 const DRIVE_CLIENT_ID = '654477930191-5ilmuk9v0opsetvpjei14o7dgku4ddtg.apps.googleusercontent.com';
 const DRIVE_SCOPES    = 'https://www.googleapis.com/auth/drive.file';
+const GCAL_SCOPE      = 'https://www.googleapis.com/auth/calendar.readonly';
+// Combined scope requested at sign-in so one consent covers both Drive + Calendar
+const ALL_SCOPES      = DRIVE_SCOPES + ' ' + GCAL_SCOPE;
 const DRIVE_FOLDER_NAME = 'Command Centre Attachments';
 
 let driveAccessToken   = null;
@@ -3468,7 +3596,7 @@ function driveInitTokenClient() {
   if (driveTokenClient || !window.google?.accounts?.oauth2) return;
   driveTokenClient = window.google.accounts.oauth2.initTokenClient({
     client_id: DRIVE_CLIENT_ID,
-    scope: DRIVE_SCOPES,
+    scope: ALL_SCOPES,
     callback: async (resp) => {
       if (resp.error) { driveShowStatus('Google sign-in failed: ' + resp.error); return; }
       driveAccessToken = resp.access_token;
@@ -3535,10 +3663,24 @@ function driveGetFileIcon(name) {
   return map[ext] || '📎';
 }
 
+function driveIsMobile() {
+  return window.matchMedia('(max-width: 899px)').matches;
+}
+
 function renderDriveFileList() {
   const list = document.getElementById('drive-file-list');
   if (!list) return;
-  if (!taskDriveAttachments.length) { list.innerHTML = ''; return; }
+
+  const mobileEmpty = document.getElementById('drive-mobile-empty');
+
+  if (!taskDriveAttachments.length) {
+    list.innerHTML = '';
+    // On mobile, show the "no files" note; on desktop it's already shown via drive-not-connected
+    if (mobileEmpty) mobileEmpty.style.display = driveIsMobile() ? '' : 'none';
+    return;
+  }
+
+  if (mobileEmpty) mobileEmpty.style.display = 'none';
   list.innerHTML = taskDriveAttachments.map((f, i) => {
     const chipClass = f.status === 'deleting' ? 'drive-file-chip is-deleting'
                     : f.status === 'delete-error' ? 'drive-file-chip delete-error'
@@ -3571,9 +3713,15 @@ window.driveRemoveFile = async (index) => {
     return;
   }
 
-  // If no token, inform the user — can't delete from Drive without auth.
+  // If no token (covers mobile always, and desktop when not connected):
   if (!driveAccessToken) {
-    if (!confirm(`"${f.name}" was uploaded to Google Drive but you are not connected.\n\nRemove it from this task anyway? (The Drive copy will NOT be deleted.)\n\nTo delete from Drive too, reconnect Google Drive first.`)) return;
+    if (driveIsMobile()) {
+      // Mobile: can't connect here — remove from task record only, warn about Drive copy
+      if (!confirm(`"${f.name}" is saved in Google Drive.\n\nRemove it from this task? (The file in Google Drive will NOT be deleted — open Drive on a laptop to delete it there.)`) ) return;
+    } else {
+      // Desktop not connected: offer to reconnect first
+      if (!confirm(`"${f.name}" was uploaded to Google Drive but you are not connected.\n\nRemove it from this task anyway? (The Drive copy will NOT be deleted.)\n\nTo delete from Drive too, reconnect Google Drive first.`)) return;
+    }
     taskDriveAttachments.splice(index, 1);
     renderDriveFileList();
     return;
@@ -3659,6 +3807,22 @@ function driveInitModal(existingAttachments = []) {
     name: a.name, file: null, status: 'done',
     driveFileId: a.driveFileId, driveUrl: a.driveUrl
   }));
+
+  if (driveIsMobile()) {
+    // ── MOBILE: show files + delete buttons only; hide all connect/upload UI ──
+    // Hide desktop-only elements
+    document.querySelectorAll('.drive-desktop-only').forEach(el => el.style.display = 'none');
+    // Render file list (will show mobile-empty note if no files)
+    renderDriveFileList();
+    return;
+  }
+
+  // ── DESKTOP: full connect + upload UI ──
+  // Make sure desktop elements are visible
+  document.querySelectorAll('.drive-desktop-only').forEach(el => el.style.display = '');
+  // drive-connected-ui starts hidden; driveShowConnectedUI/DisconnectedUI will toggle it
+  document.getElementById('drive-connected-ui').style.display = 'none';
+
   renderDriveFileList();
 
   if (!driveIsConfigured()) {
@@ -3689,6 +3853,271 @@ function driveShowStatus(msg) {
   const nc = document.getElementById('drive-not-connected');
   if (nc) nc.textContent = msg;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// GOOGLE CALENDAR SYNC
+// Pull calendar events → Command Centre tasks.
+// Each Google Calendar event is stored by its gcalEventId so it
+// is NEVER duplicated across multiple syncs.
+// ═══════════════════════════════════════════════════════════════
+
+let gcalTokenClient   = null;   // separate GIS token client for Calendar
+let gcalAccessToken   = null;   // runtime token (not persisted — expires in 1h)
+let gcalConnected     = false;
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function gcalSetStatus(msg, type = 'info') {
+  const el = document.getElementById('gcal-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `gcal-status show ${type}`;
+}
+
+function gcalClearStatus() {
+  const el = document.getElementById('gcal-status');
+  if (el) { el.textContent = ''; el.className = 'gcal-status'; }
+}
+
+function gcalMarkConnected() {
+  gcalConnected = true;
+  const btn = document.getElementById('gcal-connect-btn');
+  if (btn) {
+    btn.textContent = '✓ Google Account Connected';
+    btn.classList.add('connected');
+    btn.disabled = true;
+  }
+  const ds = document.getElementById('gcal-date-section');
+  if (ds) ds.style.display = '';
+
+  // Pre-fill date range: today → +30 days
+  const today = new Date();
+  const in30  = new Date(today); in30.setDate(today.getDate() + 30);
+  const fmt   = d => d.toISOString().slice(0, 10);
+  const fromEl = document.getElementById('gcal-from');
+  const toEl   = document.getElementById('gcal-to');
+  if (fromEl && !fromEl.value) fromEl.value = fmt(today);
+  if (toEl   && !toEl.value)   toEl.value   = fmt(in30);
+}
+
+// ── GIS sign-in for Calendar ─────────────────────────────────
+// We reuse the same OAuth Client ID as Drive.
+// The token client is re-initialised each time because the GIS
+// library resets it when the page loads.
+
+function gcalInitTokenClient(onSuccess) {
+  if (!window.google?.accounts?.oauth2) {
+    gcalSetStatus('Google Identity Services not yet loaded — please wait a moment and try again.', 'warn');
+    return;
+  }
+  const tc = window.google.accounts.oauth2.initTokenClient({
+    client_id: DRIVE_CLIENT_ID,
+    scope: ALL_SCOPES,
+    callback: (resp) => {
+      if (resp.error) {
+        gcalSetStatus('Google sign-in failed: ' + resp.error, 'error');
+        return;
+      }
+      // Share the token with Drive too so Drive + Calendar both work from one sign-in
+      gcalAccessToken  = resp.access_token;
+      driveAccessToken = resp.access_token;
+      localStorage.setItem('cc_drive_token', resp.access_token);
+      gcalMarkConnected();
+      gcalSetStatus('Connected! Select a date range and tap Pull Events.', 'ok');
+      if (typeof onSuccess === 'function') onSuccess();
+    }
+  });
+  tc.requestAccessToken({ prompt: '' });
+}
+
+window.gcalSignIn = () => {
+  if (!driveIsConfigured()) {
+    gcalSetStatus('No OAuth Client ID configured. See the Setup Guide.', 'error');
+    return;
+  }
+  gcalClearStatus();
+  gcalSetStatus('Opening Google sign-in…', 'info');
+  gcalInitTokenClient();
+};
+
+// ── Restore connection state on page load ────────────────────
+// If the user connected Drive before, the same token covers Calendar.
+// Mark as connected so the date section appears immediately.
+(function gcalRestoreState() {
+  const saved = localStorage.getItem('cc_drive_token');
+  if (saved) {
+    gcalAccessToken  = saved;
+    driveAccessToken = saved;
+    setTimeout(gcalMarkConnected, 400);
+  }
+})();
+
+// ── Core sync function ───────────────────────────────────────
+
+window.gcalSync = async () => {
+  const token = gcalAccessToken || driveAccessToken;
+  if (!token) {
+    gcalSetStatus('Connect your Google Account first.', 'warn');
+    return;
+  }
+
+  const fromVal = document.getElementById('gcal-from')?.value;
+  const toVal   = document.getElementById('gcal-to')?.value;
+  if (!fromVal || !toVal) {
+    gcalSetStatus('Please select a From and To date.', 'warn');
+    return;
+  }
+  if (fromVal > toVal) {
+    gcalSetStatus('From date must be before To date.', 'warn');
+    return;
+  }
+
+  const syncBtn = document.getElementById('gcal-sync-btn');
+  if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = '⏳ Pulling events…'; }
+  gcalSetStatus('Fetching events from Google Calendar…', 'info');
+
+  try {
+    // ── Build set of already-imported gcalEventIds ──────────
+    const importedIds = new Set(
+      Object.values(tasks)
+        .filter(t => t.gcalEventId)
+        .map(t => t.gcalEventId)
+    );
+
+    // ── Fetch events from Calendar API ──────────────────────
+    const timeMin = encodeURIComponent(new Date(fromVal + 'T00:00:00').toISOString());
+    const timeMax = encodeURIComponent(new Date(toVal   + 'T23:59:59').toISOString());
+    const fields  = encodeURIComponent('items(id,summary,description,start,end,status,recurringEventId)');
+
+    let allEvents = [];
+    let pageToken = '';
+
+    // Paginate — Calendar API returns max 250 per page
+    do {
+      const url =
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events` +
+        `?timeMin=${timeMin}&timeMax=${timeMax}` +
+        `&singleEvents=true&orderBy=startTime` +
+        `&maxResults=250&fields=${fields}` +
+        (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '');
+
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.status === 401) {
+        // Token expired — clear and ask to reconnect
+        gcalAccessToken  = null;
+        driveAccessToken = null;
+        localStorage.removeItem('cc_drive_token');
+        gcalConnected = false;
+        const btn = document.getElementById('gcal-connect-btn');
+        if (btn) { btn.textContent = 'Connect Google Account'; btn.classList.remove('connected'); btn.disabled = false; }
+        const ds = document.getElementById('gcal-date-section');
+        if (ds) ds.style.display = 'none';
+        gcalSetStatus('Session expired. Please reconnect your Google Account and sync again.', 'error');
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      allEvents = allEvents.concat(data.items || []);
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+
+    // ── Process events ───────────────────────────────────────
+    const parseTime = (dt) => {
+      if (!dt || !dt.includes('T')) return null;
+      const d = new Date(dt);
+      return d.toTimeString().slice(0, 5); // "HH:MM"
+    };
+
+    let created = 0, skipped = 0;
+
+    for (const ev of allEvents) {
+      // Skip cancelled events
+      if (ev.status === 'cancelled') { skipped++; continue; }
+      // Skip if already imported — this is the deduplication guard
+      if (importedIds.has(ev.id)) { skipped++; continue; }
+
+      const startRaw  = ev.start?.dateTime || ev.start?.date || null;
+      const endRaw    = ev.end?.dateTime   || ev.end?.date   || null;
+      const startDate = startRaw ? startRaw.slice(0, 10) : fromVal;
+      const startTime = parseTime(startRaw);
+      const endTime   = parseTime(endRaw);
+
+      const taskId = newLocalId('gcal');
+      tasks[taskId] = {
+        id:             taskId,
+        title:          (ev.summary || 'Untitled Calendar Event').trim(),
+        roleId:         null,
+        xp:             10,
+        priority:       'medium',
+        startDate,
+        deadline:       startDate,
+        startTime,
+        endTime,
+        recurrence:     'none',
+        hourlyInterval: 1,
+        customInterval: 1,
+        customUnit:     'days',
+        weeklyWeekdays: [],
+        customWeekdays: [],
+        notes:          ev.description || '',
+        steps:          [],
+        completed:      false,
+        completedAt:    null,
+        gcalEventId:    ev.id,
+        gcalSynced:     true,
+        driveAttachments: [],
+        createdAtLocal:  new Date().toISOString(),
+        updatedAtLocal:  new Date().toISOString()
+      };
+
+      // Mark as imported so subsequent pages don't re-add
+      importedIds.add(ev.id);
+      created++;
+    }
+
+    // ── Persist locally and re-render everywhere ─────────────
+    persistLocalState();
+    renderAllLocal();
+
+    // ── Push new gcal tasks to Firestore in the background ───
+    if (currentUser?.uid) {
+      const gcalTasks = Object.values(tasks).filter(t => t.gcalSynced && t.gcalEventId);
+      for (const t of gcalTasks) {
+        setDoc(doc(db, 'users', currentUser.uid, 'tasks', t.id), t, { merge: true })
+          .catch(e => console.warn('Firestore gcal push failed:', e));
+      }
+    }
+
+    // ── Status summary ────────────────────────────────────────
+    if (created === 0 && skipped > 0) {
+      gcalSetStatus(
+        `All ${skipped} events in this date range were already imported — no duplicates added.`,
+        'ok'
+      );
+    } else if (created === 0) {
+      gcalSetStatus('No events found in the selected date range.', 'warn');
+    } else {
+      gcalSetStatus(
+        `✓ ${created} event${created !== 1 ? 's' : ''} imported as task${created !== 1 ? 's' : ''}` +
+        (skipped ? ` · ${skipped} already existed, skipped` : '') + '.',
+        'ok'
+      );
+    }
+
+  } catch (e) {
+    console.error('gcalSync error:', e);
+    gcalSetStatus(`Sync failed: ${e.message}`, 'error');
+  } finally {
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = '↓ PULL EVENTS AS TASKS'; }
+  }
+};
 
 </script>
 </body>
