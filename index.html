@@ -3172,6 +3172,37 @@ function isTaskForDate(t, date) {
 }
 
 // ─────────────────────────────────────────────
+// NEXT RECURRENCE DATE
+// ─────────────────────────────────────────────
+// Returns the next occurrence date (as Date) strictly after `fromDate`
+// for the given recurring task. Returns null if recurrenceEndDate has
+// passed or recurrence is 'none'.
+function getNextRecurrenceDate(t, fromDate) {
+  if (!t.recurrence || t.recurrence === 'none') return null;
+
+  const from   = startOfDay(fromDate);
+  const endDay = t.recurrenceEndDate
+    ? startOfDay(parseDateOnly(t.recurrenceEndDate))
+    : null;
+
+  // Walk forward day-by-day from the day after fromDate until we find
+  // the next date that passes isTaskForDate. Cap at 5 years to be safe.
+  const MAX_DAYS = 365 * 5;
+  const candidate = new Date(from);
+  candidate.setDate(candidate.getDate() + 1); // start from tomorrow
+
+  for (let i = 0; i < MAX_DAYS; i++) {
+    if (endDay && candidate > endDay) return null; // series ended
+    // Use a temporary task object with the candidate date as startDate so
+    // isTaskForDate evaluates correctly for all recurrence types
+    const tWithBase = { ...t, startDate: toDateStr(from), deadline: toDateStr(from) };
+    if (isTaskForDate(tWithBase, candidate)) return new Date(candidate);
+    candidate.setDate(candidate.getDate() + 1);
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────
 // PER-OCCURRENCE COMPLETION HELPERS
 // ─────────────────────────────────────────────
 // Returns ISO date string "YYYY-MM-DD" for a date value
@@ -3813,13 +3844,36 @@ window.toggleTask = async (id, event, dateStr) => {
     } else {
       updatedDates = [...completedDates, ds];
     }
-    tasks[id] = { ...t, completedDates: updatedDates, updatedAtLocal: new Date().toISOString() };
+
+    // On completion (not un-tick): advance startDate to next recurrence
+    let newStartDate = t.startDate || t.deadline;
+    let newDeadline  = t.deadline  || t.startDate;
+    if (!alreadyDone) {
+      const completedDay = parseDateOnly(ds);
+      const next = getNextRecurrenceDate(t, completedDay);
+      if (next) {
+        newStartDate = toDateStr(next);
+        newDeadline  = toDateStr(next);
+      }
+      // If no next date (series ended), leave startDate unchanged;
+      // allOccurrencesComplete will show the "Repeat Series" badge.
+    }
+
+    tasks[id] = {
+      ...t,
+      completedDates: updatedDates,
+      startDate:  newStartDate,
+      deadline:   newDeadline,
+      updatedAtLocal: new Date().toISOString()
+    };
     persistLocalState();
     renderAllLocal();
     try {
       if (uid) {
         await updateDoc(doc(db, 'users', uid, 'tasks', id), {
           completedDates: updatedDates,
+          startDate:  newStartDate,
+          deadline:   newDeadline,
           updatedAt: serverTimestamp()
         });
       }
