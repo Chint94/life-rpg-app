@@ -4604,17 +4604,15 @@ window.gcalSync = async () => {
 
 // ═══════════════════════════════════════════════════════════════
 // DISCOVER — THE DAILY BRIEF BY ZERODHA
-// Uses allorigins.win /get (JSON wrapper) to bypass CORS.
-// Fetches article list from Substack /api/v1/archive, then loads
-// full body_html from /api/v1/posts/{slug} on demand — no scraping.
+// Updated: robust loading via RSS + multiple CORS fallbacks.
+// Keeps this change isolated to the Discover section only.
 // ═══════════════════════════════════════════════════════════════
 
 const DISC_BASE        = 'https://thedailybrief.zerodha.com';
-const DISC_HOME_URL    = DISC_BASE + '/';
+const DISC_FEED_URL    = DISC_BASE + '/feed';
 const DISC_ARCHIVE_URL = DISC_BASE + '/api/v1/archive';
 const DISC_POST_URL    = (slug) => `${DISC_BASE}/api/v1/posts/${slug}`;
-const DISC_ALLORIGINS  = (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-const DISC_PAGE_SIZE   = 3;    // 3 articles shown at a time
+const DISC_PAGE_SIZE   = 3;    // show latest 3 articles first
 
 let discAllItems    = [];
 let discFiltered    = [];
@@ -4649,27 +4647,78 @@ function discEsc(str) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Fetch through allorigins /get (JSON wrapper) ─────────────
-// allorigins /get wraps the response in {"contents":"...","status":{...}}
-// This avoids all CORS issues since allorigins fetches server-side.
+function discAbsUrl(url) {
+  if (!url) return '';
+  try { return new URL(url, DISC_BASE).href; } catch (_) { return url; }
+}
 
-async function discFetch(url, timeoutMs = 14000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(DISC_ALLORIGINS(url), {
-      cache: 'no-store',
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error(`allorigins HTTP ${res.status}`);
-    const wrapper = await res.json();
-    if (!wrapper.contents) throw new Error('Empty response from proxy');
-    return wrapper.contents;   // the raw text (XML or JSON string)
-  } catch (e) {
-    clearTimeout(timer);
-    throw e;
+function discSlugFromLink(link) {
+  const m = String(link || '').match(/\/p\/([^/?#]+)/);
+  return m ? m[1] : '';
+}
+
+function discDecodeEntities(text) {
+  const ta = document.createElement('textarea');
+  ta.innerHTML = text || '';
+  return ta.value;
+}
+
+// ── Robust network fetch ──────────────────────────────────────
+// The older version used only allorigins /get. That often fails inside
+// Android WebView/browser environments. This tries direct first, then
+// multiple read-only CORS mirrors. If one fails, the next one is used.
+
+async function discFetchText(url, timeoutMs = 18000) {
+  const targets = [
+    url,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`
+  ];
+  let lastErr = null;
+  for (const target of targets) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(target, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      if (text && text.trim()) return text;
+      throw new Error('Empty response');
+    } catch (e) {
+      clearTimeout(timer);
+      lastErr = e;
+      console.warn('Discover fetch fallback failed:', target, e);
+    }
   }
+  throw lastErr || new Error('Unable to fetch article data');
+}
+
+async function discFetchJson(url, timeoutMs = 18000) {
+  const text = await discFetchText(url, timeoutMs);
+  return JSON.parse(text);
+}
+
+async function discFetchReaderMarkdown(url) {
+  const readerUrl = `https://r.jina.ai/http://r.jina.ai/http://http://r.jina.ai/http://`;
+  // Standard Jina Reader URL format: https://r.jina.ai/http://r.jina.ai/http://https://site/page
+  const properReaderUrl = `https://r.jina.ai/http://r.jina.ai/http://https://r.jina.ai/http://`;
+  const finalUrl = `https://r.jina.ai/http://r.jina.ai/http://https://r.jina.ai/http://`;
+  // Fallback-friendly direct reader URL. Kept separate to avoid touching the rest of the app.
+  return discFetchText(`https://r.jina.ai/http://r.jina.ai/http://https://r.jina.ai/http://` + encodeURIComponent(url), 20000);
+}
+
+function discMarkdownToHtml(md) {
+  let text = discEsc(md || '');
+  text = text
+    .replace(/^# (.*)$/gm, '<h2>$1</h2>')
+    .replace(/^## (.*)$/gm, '<h3>$1</h3>')
+    .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+    .replace(/\n\s*\n/g, '</p><p>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[(.*?)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  return `<p>${text}</p>`;
 }
 
 // ── Clean HTML for safe rendering ────────────────────────────
@@ -4685,13 +4734,15 @@ function discCleanHtml(raw) {
       if (n === 'style') el.removeAttribute(attr.name);
     });
     if (el.tagName === 'A') {
+      const href = el.getAttribute('href') || '';
+      if (href) el.setAttribute('href', discAbsUrl(href));
       el.setAttribute('target', '_blank');
       el.setAttribute('rel', 'noopener noreferrer');
     }
-    // Make Substack images load without srcset issues
     if (el.tagName === 'IMG') {
       const src = el.getAttribute('src') || '';
       if (!src) el.remove();
+      else el.setAttribute('src', discAbsUrl(src));
     }
   });
   return div.innerHTML.trim();
@@ -4703,8 +4754,6 @@ function discStripHtml(html) {
   return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
 }
 
-// ── Format date ───────────────────────────────────────────────
-
 function discFormatDate(isoStr) {
   if (!isoStr) return 'Latest';
   const d = new Date(isoStr);
@@ -4712,13 +4761,48 @@ function discFormatDate(isoStr) {
   return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
 }
 
-// ── Fetch article list from Substack archive API ─────────────
+// ── Feed/API parsing ──────────────────────────────────────────
+
+function discParseRss(xmlText) {
+  const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
+  const nodes = [...xml.querySelectorAll('item')];
+  return nodes.map((node, idx) => {
+    const get = (sel) => node.querySelector(sel)?.textContent?.trim() || '';
+    const title = discDecodeEntities(get('title')) || 'Untitled';
+    const link = get('link') || `${DISC_BASE}/`;
+    const pubDate = get('pubDate') || get('dc\\:date') || get('date');
+    const content = get('encoded') || get('content\\:encoded') || get('description') || '';
+    const subtitle = discStripHtml(get('description')).slice(0, 150);
+    const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+    return {
+      id: `rss-${idx}-${link}`,
+      title,
+      slug: discSlugFromLink(link),
+      subtitle,
+      dateStr: discFormatDate(pubDate),
+      dateRaw: pubDate,
+      link,
+      coverImage: imgMatch ? discAbsUrl(imgMatch[1]) : null,
+      excerpt: discStripHtml(content || subtitle).slice(0, 220),
+      fullLoaded: !!content,
+      fullHtml: content ? discCleanHtml(content) : ''
+    };
+  });
+}
 
 async function discFetchList(offset = 0, limit = 12) {
-  const url  = `${DISC_ARCHIVE_URL}?limit=${limit}&offset=${offset}`;
-  const text = await discFetch(url);
-  const data = JSON.parse(text);
-  return data.map(post => ({
+  // Primary: site RSS, because it usually contains the full readable article.
+  try {
+    const xml = await discFetchText(DISC_FEED_URL, 18000);
+    const rssItems = discParseRss(xml).slice(offset, offset + limit);
+    if (rssItems.length) return rssItems;
+  } catch (e) {
+    console.warn('RSS feed failed, trying archive API:', e);
+  }
+
+  // Fallback: Substack archive API.
+  const data = await discFetchJson(`${DISC_ARCHIVE_URL}?limit=${limit}&offset=${offset}`, 18000);
+  return (data || []).map(post => ({
     id:          post.id,
     title:       post.title || 'Untitled',
     slug:        post.slug,
@@ -4733,13 +4817,25 @@ async function discFetchList(offset = 0, limit = 12) {
   }));
 }
 
-// ── Fetch full article body via Substack post API ─────────────
+async function discFetchBody(item) {
+  // If RSS already gave us the full article, use it directly.
+  if (item?.fullHtml) return item.fullHtml;
 
-async function discFetchBody(slug) {
-  const url  = DISC_POST_URL(slug);
-  const text = await discFetch(url, 16000);
-  const data = JSON.parse(text);
-  return data.body_html || '';
+  // Try Substack post API first.
+  if (item?.slug) {
+    try {
+      const data = await discFetchJson(DISC_POST_URL(item.slug), 20000);
+      if (data?.body_html) return discCleanHtml(data.body_html);
+    } catch (e) {
+      console.warn('Post API failed, trying readable page:', e);
+    }
+  }
+
+  // Last fallback: load the public page and extract likely article content.
+  const html = await discFetchText(item.link, 20000);
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const article = doc.querySelector('article') || doc.querySelector('.body') || doc.querySelector('main') || doc.body;
+  return discCleanHtml(article ? article.innerHTML : html);
 }
 
 // ── Skeleton loading ──────────────────────────────────────────
@@ -4805,26 +4901,22 @@ window.discToggleCard = async (i) => {
   const item = discFiltered[i];
   if (!item) return;
 
-  // Already loaded — show immediately
-  if (item.fullLoaded) {
-    inner.innerHTML = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
+  if (item.fullLoaded && item.fullHtml) {
+    inner.innerHTML = item.fullHtml;
     return;
   }
 
-  // Show loading state
   inner.innerHTML = `<div class="disc-body-loading">⏳ Fetching full article from The Daily Brief…</div>`;
 
   try {
-    const rawHtml    = await discFetchBody(item.slug);
-    item.fullHtml    = discCleanHtml(rawHtml);
+    item.fullHtml    = await discFetchBody(item);
     item.fullLoaded  = true;
-    inner.innerHTML  = `<div class="disc-article-body-inner">${item.fullHtml}</div>`;
+    inner.innerHTML  = item.fullHtml || '<p>Article loaded, but no readable text was found.</p>';
   } catch (e) {
-    inner.innerHTML = `<div class="disc-article-body-inner">
-      <p style="color:#b42318;font-family:'Rajdhani',sans-serif;font-weight:700;">
-        ⚠ Could not load full article. Please use the link below to read on the website.
-      </p>
-    </div>`;
+    console.error('discFetchBody error:', e);
+    inner.innerHTML = `<p style="color:#b42318;font-family:'Rajdhani',sans-serif;font-weight:700;">
+      ⚠ Could not load the full article inside the app. Tap the original link below.
+    </p>`;
   }
 };
 
@@ -4839,9 +4931,7 @@ function discRenderPage() {
   const slice = discFiltered.slice(0, end);
   feed.innerHTML = discRenderCards(slice);
 
-  if (moreBtn) {
-    moreBtn.style.display = discFiltered.length > end ? 'block' : 'none';
-  }
+  if (moreBtn) moreBtn.style.display = discFiltered.length > end ? 'block' : 'none';
 }
 
 window.discLoadMore = () => { discPage++; discRenderPage(); };
@@ -4852,15 +4942,15 @@ window.discOnSearch = () => {
   const q = (document.getElementById('discSearchInp')?.value || '').toLowerCase().trim();
   discFiltered = q
     ? discAllItems.filter(a =>
-        a.title.toLowerCase().includes(q) ||
-        a.excerpt.toLowerCase().includes(q) ||
-        a.subtitle.toLowerCase().includes(q))
+        (a.title || '').toLowerCase().includes(q) ||
+        (a.excerpt || '').toLowerCase().includes(q) ||
+        (a.subtitle || '').toLowerCase().includes(q))
     : [...discAllItems];
   discPage = 0;
   discRenderPage();
   discSetStatus(
     q ? `${discFiltered.length} article${discFiltered.length !== 1 ? 's' : ''} matched`
-      : `${discAllItems.length} articles loaded.`,
+      : `${discAllItems.length} articles loaded. Tap any article to read in full.`,
     'ok'
   );
 };
@@ -4872,9 +4962,9 @@ window.discRefresh = async () => {
   const feed    = document.getElementById('discFeed');
   const moreBtn = document.getElementById('discLoadMore');
 
-  if (btn)    { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
-  if (moreBtn)  moreBtn.style.display = 'none';
-  if (feed)   feed.innerHTML = discRenderSkeletons(3);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+  if (moreBtn) moreBtn.style.display = 'none';
+  if (feed) feed.innerHTML = discRenderSkeletons(3);
 
   discSetStatus('Fetching latest articles from The Daily Brief…');
 
@@ -4883,14 +4973,14 @@ window.discRefresh = async () => {
     discFiltered = [...discAllItems];
     discPage     = 0;
     discRenderPage();
-    discSetStatus(`${discAllItems.length} articles loaded. Tap any article to read in full.`, 'ok');
+    discSetStatus(`${Math.min(3, discAllItems.length)} latest articles shown. Tap an article to read it here.`, 'ok');
   } catch (e) {
+    console.error('discRefresh error:', e);
     if (feed) feed.innerHTML = `<div class="disc-empty">
       <span class="disc-empty-icon">⚠️</span>
-      Could not load articles. Please check your internet connection and tap ↻ REFRESH.
+      Could not load articles. Tap ↻ REFRESH again, or check if your network blocks public feed proxies.
     </div>`;
-    discSetStatus('Failed to load. Tap ↻ REFRESH to try again.', 'error');
-    console.error('discRefresh error:', e);
+    discSetStatus('Failed to load articles. Refresh will now try multiple fallback sources.', 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '↻ REFRESH'; }
   }
@@ -4904,7 +4994,6 @@ function discInit() {
   discInitialised = true;
   discRefresh();
 }
-
 </script>
 </body>
 </html>
