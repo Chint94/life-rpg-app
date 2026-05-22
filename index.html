@@ -489,6 +489,66 @@ body.simple-mode .xp-pop{display:none!important;}
 @media (max-width:899px){.hero-custom-input{min-width:100%;max-width:none}.status-grid{grid-template-columns:1fr;}}
 @media (min-width:900px){.status-grid{grid-template-columns:repeat(3,1fr);}}
 
+
+/* ── PROFESSIONAL NAV + TIMELINE DRAG UPDATE ── */
+#bottom-nav{background:rgba(255,249,219,.94)!important;}
+.nav-item{border:1px solid transparent;}
+.nav-item .nav-icon{
+  width:34px;height:34px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#fffdf0,#ffe89b);
+  border:1px solid rgba(126,83,0,.18);
+  box-shadow:0 4px 12px rgba(126,83,0,.10);
+  color:#5b3c00;
+  font-size:18px!important;
+  font-weight:900;
+  line-height:1;
+}
+.nav-item.active .nav-icon{
+  background:linear-gradient(145deg,#ffd84a,#c88a05);
+  color:#201100;
+  transform:none!important;
+  box-shadow:0 8px 18px rgba(126,83,0,.20);
+}
+.nav-item .nav-label{font-size:10px!important;font-weight:800;color:#5b3c00!important;}
+@media (min-width:900px){
+  .nav-item .nav-icon{width:32px;height:32px;font-size:17px!important;}
+  .nav-item{border-radius:16px;}
+}
+.calendar-events{touch-action:none;}
+.calendar-event{
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  padding:7px 9px!important;
+  user-select:none;
+}
+.calendar-event.dragging{opacity:.65;box-shadow:0 12px 28px rgba(126,83,0,.28)!important;}
+.timeline-check{
+  width:18px;height:18px;min-width:18px;border-radius:6px;
+  border:2px solid rgba(126,83,0,.36);
+  background:rgba(255,255,255,.76);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;line-height:1;
+  cursor:pointer;
+  margin-top:1px;
+}
+.timeline-check.done{background:var(--green);border-color:var(--green);color:#fff;}
+.calendar-event-main{min-width:0;flex:1;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;}
+.calendar-event-title{padding-right:0!important;font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.calendar-event-time{padding-right:0!important;margin-bottom:0!important;flex-shrink:0;font-size:10px!important;color:#6b4700!important;}
+.timeline-drop-hint{
+  position:absolute;left:0;right:0;height:2px;background:#006e7a;z-index:7;
+  box-shadow:0 0 8px rgba(0,110,122,.5);pointer-events:none;
+}
+.status-card .status-label{font-size:12px;}
+@media (max-width:899px){
+  .calendar-event{gap:5px;padding:6px 7px!important;}
+  .timeline-check{width:16px;height:16px;min-width:16px;border-radius:5px;font-size:11px;}
+  .calendar-event-title{font-size:11px;}
+  .calendar-event-time{font-size:9px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -605,13 +665,13 @@ body.simple-mode .xp-pop{display:none!important;}
 
         <!-- Pending / Overdue Status Cards -->
         <div class="status-grid" id="dashboard-status-grid">
-          <div class="status-card pending" onclick="openTaskStatus('pending')">
+          <div class="status-card pending" onclick="openTaskStatus('pending_week')">
             <div class="status-value" id="stat-pending">0</div>
-            <div class="status-label">Pending</div>
+            <div class="status-label">Pending This Week</div>
           </div>
-          <div class="status-card overdue" onclick="openTaskStatus('overdue')">
+          <div class="status-card overdue" onclick="openTaskStatus('overdue_week')">
             <div class="status-value" id="stat-overdue">0</div>
-            <div class="status-label">Overdue</div>
+            <div class="status-label">Overdue This Week</div>
           </div>
           <div class="status-card completed" onclick="openTaskStatus('completed')">
             <div class="status-value" id="stat-completed">0</div>
@@ -655,8 +715,10 @@ body.simple-mode .xp-pop{display:none!important;}
       <div class="filter-row" id="task-filter-row">
         <div class="filter-chip active" data-filter="all" onclick="setTaskFilter('all')">All</div>
         <div class="filter-chip" data-filter="pending" onclick="setTaskFilter('pending')">Pending</div>
+        <div class="filter-chip" data-filter="pending_week" onclick="setTaskFilter('pending_week')">Pending This Week</div>
         <div class="filter-chip" data-filter="completed" onclick="setTaskFilter('completed')">Completed</div>
         <div class="filter-chip" data-filter="overdue" onclick="setTaskFilter('overdue')">Overdue</div>
+        <div class="filter-chip" data-filter="overdue_week" onclick="setTaskFilter('overdue_week')">Overdue This Week</div>
       </div>
       <div id="tasks-list"></div>
     </div>
@@ -752,7 +814,7 @@ body.simple-mode .xp-pop{display:none!important;}
       </div>
       <div class="settings-card">
         <h3>🏠 Headquarters</h3>
-        <p>Headquarters shows today’s tasks, pending tasks, and overdue tasks. Tap Pending or Overdue to jump directly into the filtered task list.</p>
+        <p>Headquarters shows today’s tasks plus this week’s pending and overdue task counts. The week starts every Monday and ends every Sunday. Tap Pending This Week, Overdue This Week, or Completed to jump directly into the filtered task list.</p>
       </div>
       <div class="settings-card">
         <h3>✅ Tasks</h3>
@@ -789,27 +851,27 @@ body.simple-mode .xp-pop{display:none!important;}
   <!-- BOTTOM NAV -->
   <div id="bottom-nav">
     <div class="nav-item active" data-screen="dashboard" onclick="switchScreen('dashboard',this)">
-      <span class="nav-icon">🏠</span>
+      <span class="nav-icon">⌂</span>
       <span class="nav-label">HQ</span>
     </div>
     <div class="nav-item" data-screen="tasks" onclick="switchScreen('tasks',this)">
-      <span class="nav-icon">⚔️</span>
+      <span class="nav-icon">✓</span>
       <span class="nav-label">Tasks</span>
     </div>
     <div class="nav-item" data-screen="timeline" onclick="switchScreen('timeline',this)">
-      <span class="nav-icon">⏱️</span>
+      <span class="nav-icon">◷</span>
       <span class="nav-label">Timeline</span>
     </div>
     <div class="nav-item" data-screen="journal" onclick="switchScreen('journal',this)">
-      <span class="nav-icon">📓</span>
+      <span class="nav-icon">✎</span>
       <span class="nav-label">Journal</span>
     </div>
     <div class="nav-item" data-screen="roles" onclick="switchScreen('roles',this)">
-      <span class="nav-icon">🎭</span>
+      <span class="nav-icon">◎</span>
       <span class="nav-label">Roles</span>
     </div>
     <div class="nav-item" data-screen="settings" onclick="switchScreen('settings',this)">
-      <span class="nav-icon">⚙️</span>
+      <span class="nav-icon">⚙</span>
       <span class="nav-label">Settings</span>
     </div>
   </div>
@@ -1405,6 +1467,37 @@ function isTaskOverdue(t, ref = new Date()) {
 function isTaskPending(t, ref = new Date()) {
   return !t.completed && !isTaskOverdue(t, ref);
 }
+function weekBounds(ref = new Date()) {
+  const start = startOfDay(ref);
+  const day = start.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  start.setDate(start.getDate() + diffToMonday);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+function taskOccursInRange(t, start, end) {
+  const cursor = new Date(start);
+  cursor.setHours(12,0,0,0);
+  const last = new Date(end);
+  last.setHours(12,0,0,0);
+  while (cursor <= last) {
+    if (isTaskForDate(t, cursor)) return true;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return false;
+}
+function taskIsPendingThisWeek(t) {
+  if (t.completed) return false;
+  const { start, end } = weekBounds(new Date());
+  return taskOccursInRange(t, start, end) && !isTaskOverdue(t);
+}
+function taskIsOverdueThisWeek(t) {
+  if (t.completed) return false;
+  const { start, end } = weekBounds(new Date());
+  return taskOccursInRange(t, start, end) && isTaskOverdue(t);
+}
 window.openTaskStatus = (status) => {
   setTaskFilter(status);
   switchScreen('tasks', document.querySelector('.nav-item[data-screen="tasks"]'));
@@ -1485,8 +1578,8 @@ function renderDashboard() {
   }).length;
   document.getElementById('stat-tasks').textContent = completedToday;
   document.getElementById('stat-roles').textContent = Object.keys(roles).length;
-  const pendingCount = Object.values(tasks).filter(t => isTaskPending(t)).length;
-  const overdueCount = Object.values(tasks).filter(t => isTaskOverdue(t)).length;
+  const pendingCount = Object.values(tasks).filter(t => taskIsPendingThisWeek(t)).length;
+  const overdueCount = Object.values(tasks).filter(t => taskIsOverdueThisWeek(t)).length;
   const completedCount = Object.values(tasks).filter(t => t.completed).length;
   const pendingEl = document.getElementById('stat-pending');
   const overdueEl = document.getElementById('stat-overdue');
@@ -1727,8 +1820,10 @@ function renderTasks() {
 
   let arr = Object.values(tasks);
   if (taskFilter === 'pending') arr = arr.filter(t => isTaskPending(t));
+  else if (taskFilter === 'pending_week') arr = arr.filter(t => taskIsPendingThisWeek(t));
   else if (taskFilter === 'completed') arr = arr.filter(t => t.completed);
   else if (taskFilter === 'overdue') arr = arr.filter(t => isTaskOverdue(t));
+  else if (taskFilter === 'overdue_week') arr = arr.filter(t => taskIsOverdueThisWeek(t));
 
   arr.sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -2074,7 +2169,6 @@ function renderTimeline() {
     .filter(t => t._endMin > t._startMin)
     .sort((a,b) => a._startMin - b._startMin || a._endMin - b._endMin);
 
-  // Google Calendar-style overlap columns
   const active = [];
   events.forEach(ev => {
     for (let i = active.length - 1; i >= 0; i--) if (active[i]._endMin <= ev._startMin) active.splice(i,1);
@@ -2101,16 +2195,18 @@ function renderTimeline() {
     const width = `calc(${100 / cols}% - 6px)`;
     const left = `calc(${(t._col || 0) * (100 / cols)}% + 3px)`;
     const roleColor = t.roleId && roles[t.roleId] ? roles[t.roleId].color : '#b87600';
-    const timeText = t.occurrenceTime ? `${t.occurrenceTime} · hourly` : (formatTimeRange(t) || 'Scheduled task');
-    return `<div class="calendar-event ${t.completed ? 'done' : ''}" style="top:${top}px;height:${height}px;left:${left};width:${width};border-left-color:${roleColor}" onclick="openTaskModal('${t.id}')" title="${escHtml(t.title)}">
-      <div class="calendar-event-complete ${t.completed ? 'done' : ''}" onclick="toggleTask('${t.id}',event)">${t.completed ? '✓' : ''}</div>
-      <div class="calendar-event-title">${t.completed ? '✅' : isTaskOverdue(t, isToday ? now : selected) ? '⚠️' : '●'} ${escHtml(t.title)}</div>
-      <div class="calendar-event-time">${escHtml(timeText)}</div>
+    const timeText = t.occurrenceTime ? `${t.occurrenceTime} · hourly` : (formatTimeRange(t) || 'Scheduled');
+    return `<div class="calendar-event ${t.completed ? 'done' : ''}" draggable="true" data-task-id="${t.id}" data-duration="${Math.max(15, t._endMin - t._startMin)}" style="top:${top}px;height:${height}px;left:${left};width:${width};border-left-color:${roleColor}" onclick="openTaskModal('${t.id}')" ondragstart="timelineDragStart(event,'${t.id}',${Math.max(15, t._endMin - t._startMin)})" ondragend="timelineDragEnd(event)" onpointerdown="timelinePointerDown(event,'${t.id}',${Math.max(15, t._endMin - t._startMin)})" title="Drag to move time · ${escHtml(t.title)}">
+      <div class="timeline-check ${t.completed ? 'done' : ''}" onclick="toggleTask('${t.id}',event)">${t.completed ? '✓' : ''}</div>
+      <div class="calendar-event-main">
+        <div class="calendar-event-title">${escHtml(t.title)}</div>
+        <div class="calendar-event-time">${escHtml(timeText)}</div>
+      </div>
     </div>`;
   }).join('');
 
   const nowLine = isToday ? `<div class="calendar-now-line" style="top:${((now.getHours()*60 + now.getMinutes())/60)*hourHeight}px"></div>` : '';
-  grid.innerHTML = `<div class="calendar-day"><div class="calendar-time-rail">${labels}</div><div class="calendar-events">${lines}${eventHtml}${nowLine}</div></div>`;
+  grid.innerHTML = `<div class="calendar-day"><div class="calendar-time-rail">${labels}</div><div class="calendar-events" ondragover="timelineDragOver(event)" ondragleave="timelineDragLeave(event)" ondrop="timelineDrop(event)">${lines}${eventHtml}${nowLine}</div></div>`;
 
   setTimeout(() => {
     if (isToday) {
@@ -2125,6 +2221,125 @@ window.changeTimelineDay = (offset) => {
   d.setDate(d.getDate() + offset);
   selectedTimelineDate = d;
   renderTimeline();
+};
+
+
+let timelineDragData = null;
+function minutesToTime(mins) {
+  mins = Math.max(0, Math.min(23 * 60 + 59, Math.round(mins)));
+  return `${String(Math.floor(mins / 60)).padStart(2,'0')}:${String(mins % 60).padStart(2,'0')}`;
+}
+
+let timelinePointerData = null;
+function timelineContainerFromPoint(x, y) {
+  const el = document.elementFromPoint(x, y);
+  return el?.closest?.('.calendar-events');
+}
+function timelineShowHint(container, clientY) {
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+  const snapMin = Math.round((y / 64) * 60 / 15) * 15;
+  let hint = container.querySelector('.timeline-drop-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.className = 'timeline-drop-hint';
+    container.appendChild(hint);
+  }
+  hint.style.top = `${(snapMin / 60) * 64}px`;
+}
+async function timelineApplyMove(taskId, duration, container, clientY) {
+  const t = tasks[taskId];
+  if (!t || !container) return;
+  const rect = container.getBoundingClientRect();
+  const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+  const newStartMin = Math.max(0, Math.min(23 * 60 + 45, Math.round((y / 64) * 60 / 15) * 15));
+  const newEndMin = Math.min(23 * 60 + 59, newStartMin + Math.max(15, Number(duration || 60)));
+  const selected = selectedTimelineDate ? new Date(selectedTimelineDate) : new Date();
+  const dateStr = `${selected.getFullYear()}-${String(selected.getMonth()+1).padStart(2,'0')}-${String(selected.getDate()).padStart(2,'0')}`;
+  tasks[taskId] = { ...t, startDate: dateStr, deadline: dateStr, startTime: minutesToTime(newStartMin), endTime: minutesToTime(newEndMin), updatedAtLocal: new Date().toISOString() };
+  persistLocalState();
+  renderAllLocal();
+  if (currentUser?.uid) {
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid, 'tasks', taskId), {
+        startDate: dateStr, deadline: dateStr, startTime: tasks[taskId].startTime, endTime: tasks[taskId].endTime, updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch(e) { showSaveError('Timeline move', e); }
+  }
+}
+window.timelinePointerDown = (event, taskId, duration) => {
+  if (event.target?.closest?.('.timeline-check')) return;
+  timelinePointerData = { taskId, duration: Number(duration || 60), startX: event.clientX, startY: event.clientY, moved: false, source: event.currentTarget };
+  const onMove = (e) => {
+    if (!timelinePointerData) return;
+    const dx = Math.abs(e.clientX - timelinePointerData.startX);
+    const dy = Math.abs(e.clientY - timelinePointerData.startY);
+    if (dx > 8 || dy > 8) timelinePointerData.moved = true;
+    if (timelinePointerData.moved) {
+      e.preventDefault();
+      timelinePointerData.source?.classList?.add('dragging');
+      const container = timelineContainerFromPoint(e.clientX, e.clientY);
+      document.querySelectorAll('.timeline-drop-hint').forEach(h => { if (h.parentElement !== container) h.remove(); });
+      timelineShowHint(container, e.clientY);
+    }
+  };
+  const onUp = async (e) => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    if (!timelinePointerData) return;
+    const data = timelinePointerData;
+    timelinePointerData = null;
+    data.source?.classList?.remove('dragging');
+    const container = timelineContainerFromPoint(e.clientX, e.clientY);
+    document.querySelectorAll('.timeline-drop-hint').forEach(h => h.remove());
+    if (data.moved && container) {
+      e.preventDefault();
+      await timelineApplyMove(data.taskId, data.duration, container, e.clientY);
+    }
+  };
+  document.addEventListener('pointermove', onMove, { passive:false });
+  document.addEventListener('pointerup', onUp, { once:true });
+};
+
+window.timelineDragStart = (event, taskId, duration) => {
+  timelineDragData = { taskId, duration: Number(duration || 60) };
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', taskId);
+  event.currentTarget.classList.add('dragging');
+};
+window.timelineDragEnd = (event) => {
+  event.currentTarget?.classList?.remove('dragging');
+  document.querySelector('.timeline-drop-hint')?.remove();
+};
+window.timelineDragOver = (event) => {
+  if (!timelineDragData) return;
+  event.preventDefault();
+  const container = event.currentTarget;
+  const rect = container.getBoundingClientRect();
+  const y = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+  const snapMin = Math.round((y / 64) * 60 / 15) * 15;
+  let hint = container.querySelector('.timeline-drop-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.className = 'timeline-drop-hint';
+    container.appendChild(hint);
+  }
+  hint.style.top = `${(snapMin / 60) * 64}px`;
+};
+window.timelineDragLeave = (event) => {
+  if (!event.currentTarget.contains(event.relatedTarget)) {
+    event.currentTarget.querySelector('.timeline-drop-hint')?.remove();
+  }
+};
+window.timelineDrop = async (event) => {
+  event.preventDefault();
+  const container = event.currentTarget;
+  container.querySelector('.timeline-drop-hint')?.remove();
+  const taskId = timelineDragData?.taskId || event.dataTransfer.getData('text/plain');
+  const duration = timelineDragData?.duration || 60;
+  timelineDragData = null;
+  await timelineApplyMove(taskId, duration, container, event.clientY);
 };
 
 // ─────────────────────────────────────────────
