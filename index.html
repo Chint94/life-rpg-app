@@ -54,7 +54,7 @@ body{font-family:'Exo 2',sans-serif;color:var(--text-main);overscroll-behavior:n
 
 /* ── APP SHELL ── */
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:480px;margin:0 auto;position:relative;background:var(--bg-deep);}
-#main-content{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 12px);}
+#main-content{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 12px);overscroll-behavior:none;}
 
 /* ── AUTH SCREEN ── */
 #auth-screen{position:fixed;inset:0;background:var(--bg-void);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%);width:100%;}
@@ -655,6 +655,7 @@ body.simple-mode .xp-pop{display:none!important;}
 @media (max-width:899px){
   .drive-desktop-only{display:none!important;}
   .drive-mobile-only{display:block;}
+  .gcal-desktop-only{display:none!important;}
 }
 
 @media (max-width:899px){
@@ -1766,6 +1767,27 @@ body.simple-mode .xp-pop{display:none!important;}
   .disc-article-title { font-size: 13px; }
 }
 
+/* ── JOURNAL ENTRY EDIT / DELETE ── */
+.journal-entry-actions {
+  display: flex; gap: 6px; margin-top: 10px; justify-content: flex-end;
+}
+.btn-journal-edit, .btn-journal-delete {
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 900;
+  letter-spacing: .7px; border-radius: 8px; padding: 5px 12px;
+  cursor: pointer; border: 1px solid rgba(126,83,0,0.20);
+  transition: all .18s;
+}
+.btn-journal-edit {
+  background: rgba(255,248,200,0.85); color: #5b3c00;
+}
+.btn-journal-edit:hover { border-color: #b87600; color: #3b2500; background: rgba(255,216,74,0.28); }
+.btn-journal-delete {
+  background: rgba(180,35,24,0.08); color: #b42318; border-color: rgba(180,35,24,0.20);
+}
+.btn-journal-delete:hover { background: rgba(180,35,24,0.16); }
+/* Edit modal */
+#journal-edit-modal .form-label { color: #7b5b00; }
+
 </style>
 </head>
 <body>
@@ -2142,8 +2164,8 @@ body.simple-mode .xp-pop{display:none!important;}
         <p>Tasks save locally first and then sync to Firebase when permissions and internet are available. Use the same login email on laptop and mobile for cross-device sync.</p>
       </div>
 
-      <!-- ── GOOGLE CALENDAR SYNC CARD ── -->
-      <div class="settings-card gcal-sync-card">
+      <!-- ── GOOGLE CALENDAR SYNC CARD (desktop only) ── -->
+      <div class="settings-card gcal-sync-card gcal-desktop-only">
         <h3>📅 Google Calendar Sync</h3>
         <p>Pull events from your Google Calendar as tasks. Each event is pulled only once — duplicates are automatically skipped on future syncs.</p>
 
@@ -2174,7 +2196,45 @@ body.simple-mode .xp-pop{display:none!important;}
       </div>
     </div>
 
-  </div><!-- end main-content -->
+  
+<!-- JOURNAL EDIT MODAL -->
+<div class="modal-overlay" id="journal-edit-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">EDIT JOURNAL ENTRY</div>
+    <input type="hidden" id="journal-edit-id" />
+    <div class="form-group">
+      <label class="form-label">MOOD</label>
+      <div class="mood-row" id="journal-edit-mood-row">
+        <div class="mood-btn" data-mood="😄" onclick="selectEditMood(this,'😄')">😄</div>
+        <div class="mood-btn" data-mood="😊" onclick="selectEditMood(this,'😊')">😊</div>
+        <div class="mood-btn" data-mood="😐" onclick="selectEditMood(this,'😐')">😐</div>
+        <div class="mood-btn" data-mood="😔" onclick="selectEditMood(this,'😔')">😔</div>
+        <div class="mood-btn" data-mood="😤" onclick="selectEditMood(this,'😤')">😤</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">TAGS</label>
+      <div class="tag-row" id="journal-edit-tags">
+        <div class="tag-chip" onclick="toggleEditTag(this,'Productive')">Productive</div>
+        <div class="tag-chip" onclick="toggleEditTag(this,'Focused')">Focused</div>
+        <div class="tag-chip" onclick="toggleEditTag(this,'Grateful')">Grateful</div>
+        <div class="tag-chip" onclick="toggleEditTag(this,'Tired')">Tired</div>
+        <div class="tag-chip" onclick="toggleEditTag(this,'Motivated')">Motivated</div>
+        <div class="tag-chip" onclick="toggleEditTag(this,'Anxious')">Anxious</div>
+        <div class="tag-chip" onclick="toggleEditTag(this,'Creative')">Creative</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ENTRY TEXT</label>
+      <textarea class="journal-textarea" id="journal-edit-text" rows="6" placeholder="Edit your entry…"></textarea>
+    </div>
+    <button type="button" class="btn-modal-save" onclick="saveJournalEdit()">💾 SAVE CHANGES</button>
+    <button type="button" class="btn-modal-cancel" onclick="closeModal('journal-edit-modal')">CANCEL</button>
+  </div>
+</div>
+
+</div><!-- end main-content -->
 
   <!-- BOTTOM NAV -->
   <div id="bottom-nav">
@@ -2348,23 +2408,48 @@ body.simple-mode .xp-pop{display:none!important;}
       </select>
     </div>
     <div class="form-group recurrence-detail" id="custom-recurrence-fields">
-      <label class="form-label">Custom repeat</label>
-      <div class="time-row">
-        <input class="form-input" type="number" id="task-custom-interval" min="1" value="1"/>
-        <select class="form-select" id="task-custom-unit">
-          <option value="days">Day(s)</option>
-          <option value="weeks">Week(s)</option>
-        </select>
+      <label class="form-label">Custom repeat type</label>
+      <select class="form-select" id="task-custom-type" onchange="updateCustomRecurrenceSubFields()">
+        <option value="interval">Every N days / weeks</option>
+        <option value="every2days">Every 2 days</option>
+        <option value="alternate">Every alternate day</option>
+        <option value="nth">Nth day of the month</option>
+        <option value="bimonthly">Every 2 months</option>
+        <option value="quarterly">Quarterly (every 3 months)</option>
+        <option value="annually">Annually (every year)</option>
+        <option value="weekdays">Selected weekdays</option>
+      </select>
+
+      <!-- Interval sub-fields (every N days/weeks) -->
+      <div id="custom-sub-interval" class="custom-sub-field" style="margin-top:10px;">
+        <div class="time-row">
+          <input class="form-input" type="number" id="task-custom-interval" min="1" value="1" style="max-width:80px;"/>
+          <select class="form-select" id="task-custom-unit">
+            <option value="days">Day(s)</option>
+            <option value="weeks">Week(s)</option>
+          </select>
+        </div>
       </div>
-      <label class="form-label" style="margin-top:12px;">Repeat on selected weekdays</label>
-      <div class="weekday-picker" id="task-custom-weekdays">
-        <label class="weekday-chip"><input type="checkbox" value="1">Mon</label>
-        <label class="weekday-chip"><input type="checkbox" value="2">Tue</label>
-        <label class="weekday-chip"><input type="checkbox" value="3">Wed</label>
-        <label class="weekday-chip"><input type="checkbox" value="4">Thu</label>
-        <label class="weekday-chip"><input type="checkbox" value="5">Fri</label>
-        <label class="weekday-chip"><input type="checkbox" value="6">Sat</label>
-        <label class="weekday-chip"><input type="checkbox" value="0">Sun</label>
+
+      <!-- Nth day of month -->
+      <div id="custom-sub-nth" class="custom-sub-field" style="display:none;margin-top:10px;">
+        <label class="form-label">Day of month (1–28)</label>
+        <input class="form-input" type="number" id="task-custom-nth" min="1" max="28" value="1" placeholder="e.g. 15"/>
+        <div class="form-help-text">Repeats on the same day number each month.</div>
+      </div>
+
+      <!-- Weekday picker (shown for 'weekdays' sub-type) -->
+      <div id="custom-sub-weekdays" class="custom-sub-field" style="display:none;margin-top:10px;">
+        <label class="form-label">Repeat on selected weekdays</label>
+        <div class="weekday-picker" id="task-custom-weekdays">
+          <label class="weekday-chip"><input type="checkbox" value="1">Mon</label>
+          <label class="weekday-chip"><input type="checkbox" value="2">Tue</label>
+          <label class="weekday-chip"><input type="checkbox" value="3">Wed</label>
+          <label class="weekday-chip"><input type="checkbox" value="4">Thu</label>
+          <label class="weekday-chip"><input type="checkbox" value="5">Fri</label>
+          <label class="weekday-chip"><input type="checkbox" value="6">Sat</label>
+          <label class="weekday-chip"><input type="checkbox" value="0">Sun</label>
+        </div>
       </div>
     </div>
     <div class="form-group drive-attach-section" id="task-drive-section">
@@ -2403,6 +2488,8 @@ body.simple-mode .xp-pop{display:none!important;}
 
 <!-- FIREBASE -->
 <script type="module">
+// Prevent browser from restoring previous scroll position on back/forward
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -2451,20 +2538,38 @@ try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; 
 function ccResetMainScrollTop() {
   const mc = document.getElementById('main-content');
   if (!mc) return;
+  // Disable smooth scroll temporarily so the reset is instant
+  mc.style.scrollBehavior = 'auto';
   mc.scrollTop = 0;
+  mc.scrollLeft = 0;
   window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  // Re-enable after reset
+  requestAnimationFrame(() => { mc.style.scrollBehavior = ''; });
 }
+
+// Guards so we stop resetting once the user interacts
+let ccScrollGuardActive = false;
+let ccScrollGuardTimer  = null;
 
 function ccResetMainScrollTopRepeated() {
-  ccResetMainScrollTop();
-  requestAnimationFrame(ccResetMainScrollTop);
-  setTimeout(ccResetMainScrollTop, 80);
-  setTimeout(ccResetMainScrollTop, 250);
-  setTimeout(ccResetMainScrollTop, 700);
+  if (ccScrollGuardActive) return;
+  ccScrollGuardActive = true;
+  const resets = [0, 50, 150, 350, 700, 1200, 2000];
+  resets.forEach(ms => setTimeout(ccResetMainScrollTop, ms));
+  clearTimeout(ccScrollGuardTimer);
+  // After 3 seconds, stop forcing resets so normal scroll works
+  ccScrollGuardTimer = setTimeout(() => { ccScrollGuardActive = false; }, 2200);
 }
 
-window.addEventListener('pageshow', ccResetMainScrollTopRepeated);
-window.addEventListener('load', ccResetMainScrollTopRepeated);
+function ccActivateScrollGuard() {
+  ccScrollGuardActive = false;
+  ccResetMainScrollTopRepeated();
+}
+
+window.addEventListener('pageshow', ccActivateScrollGuard);
+window.addEventListener('load', ccActivateScrollGuard);
 
 
 // ─────────────────────────────────────────────
@@ -2794,8 +2899,18 @@ function recurrenceLabel(t) {
   }
   if (t.recurrence === 'monthly') return 'Monthly';
   if (t.recurrence === 'custom') {
-    const days = (t.customWeekdays || []).map(d => dayNames[Number(d)]).filter(Boolean).join(', ');
-    return days ? `Custom · ${days}` : `Custom · every ${t.customInterval || 1} ${t.customUnit || 'days'}`;
+    const ct = t.customType || 'interval';
+    if (ct === 'every2days')  return 'Every 2 days';
+    if (ct === 'alternate')   return 'Every alternate day';
+    if (ct === 'nth')         return `${t.customNth || 1}${['th','st','nd','rd'][Math.min((t.customNth||1)%10,3)>3?0:(t.customNth||1)%10] || 'th'} of month`;
+    if (ct === 'bimonthly')   return 'Every 2 months';
+    if (ct === 'quarterly')   return 'Quarterly';
+    if (ct === 'annually')    return 'Annually';
+    if (ct === 'weekdays') {
+      const days = (t.customWeekdays || []).map(d => dayNames[Number(d)]).filter(Boolean).join(', ');
+      return days ? `Custom · ${days}` : 'Custom weekdays';
+    }
+    return `Every ${t.customInterval || 1} ${t.customUnit || 'days'}`;
   }
   return t.recurrence.charAt(0).toUpperCase() + t.recurrence.slice(1);
 }
@@ -2818,8 +2933,32 @@ function isTaskForDate(t, date) {
   if (t.recurrence === 'custom') {
     const diffDays = Math.floor((target - baseDay) / 86400000);
     if (diffDays < 0) return false;
-    const weekdays = (t.customWeekdays || []).map(Number);
-    if (weekdays.length > 0) return weekdays.includes(target.getDay());
+    const ct = t.customType || 'interval';
+    if (ct === 'every2days')  return diffDays % 2 === 0;
+    if (ct === 'alternate')   return diffDays % 2 === 0;
+    if (ct === 'nth') {
+      if (target < baseDay) return false;
+      return target.getDate() === Math.max(1, Math.min(28, Number(t.customNth || 1)));
+    }
+    if (ct === 'bimonthly') {
+      if (target < baseDay) return false;
+      const mDiff = (target.getFullYear() - baseDay.getFullYear()) * 12 + (target.getMonth() - baseDay.getMonth());
+      return mDiff % 2 === 0 && target.getDate() === baseDay.getDate();
+    }
+    if (ct === 'quarterly') {
+      if (target < baseDay) return false;
+      const mDiff = (target.getFullYear() - baseDay.getFullYear()) * 12 + (target.getMonth() - baseDay.getMonth());
+      return mDiff % 3 === 0 && target.getDate() === baseDay.getDate();
+    }
+    if (ct === 'annually') {
+      if (target < baseDay) return false;
+      return target.getMonth() === baseDay.getMonth() && target.getDate() === baseDay.getDate();
+    }
+    if (ct === 'weekdays') {
+      const weekdays = (t.customWeekdays || []).map(Number);
+      return weekdays.length > 0 ? weekdays.includes(target.getDay()) : false;
+    }
+    // default: interval
     const interval = Math.max(1, Number(t.customInterval || 1));
     const unitDays = t.customUnit === 'weeks' ? 7 : 1;
     return diffDays % (interval * unitDays) === 0;
@@ -3434,8 +3573,10 @@ window.openTaskModal = (id = null) => {
     document.getElementById('task-start-time').value = t.startTime || '';
     document.getElementById('task-end-time').value = t.endTime || '';
     document.getElementById('task-hourly-interval').value = t.hourlyInterval || '1';
+    document.getElementById('task-custom-type').value     = t.customType     || 'interval';
     document.getElementById('task-custom-interval').value = t.customInterval || '1';
-    document.getElementById('task-custom-unit').value = t.customUnit || 'days';
+    document.getElementById('task-custom-unit').value     = t.customUnit     || 'days';
+    document.getElementById('task-custom-nth').value      = t.customNth      || '1';
     setCustomWeekdays(t.customWeekdays || []);
     setWeeklyWeekdays(t.weeklyWeekdays || []);
     updateRecurrenceFields();
@@ -3497,6 +3638,14 @@ window.updateRecurrenceFields = () => {
   document.getElementById('weekly-recurrence-fields')?.classList.toggle('show', recurrence === 'weekly');
   document.getElementById('hourly-recurrence-fields')?.classList.toggle('show', recurrence === 'hourly');
   document.getElementById('custom-recurrence-fields')?.classList.toggle('show', recurrence === 'custom');
+  if (recurrence === 'custom') updateCustomRecurrenceSubFields();
+};
+
+window.updateCustomRecurrenceSubFields = () => {
+  const type = document.getElementById('task-custom-type')?.value || 'interval';
+  document.getElementById('custom-sub-interval').style.display  = type === 'interval'  ? '' : 'none';
+  document.getElementById('custom-sub-nth').style.display       = type === 'nth'        ? '' : 'none';
+  document.getElementById('custom-sub-weekdays').style.display  = type === 'weekdays'   ? '' : 'none';
 };
 
 window.saveTask = async () => {
@@ -3532,10 +3681,12 @@ window.saveTask = async () => {
       endTime: endTime || null,
       recurrence,
       hourlyInterval: Number(document.getElementById('task-hourly-interval')?.value || 1),
+      customType: recurrence === 'custom' ? (document.getElementById('task-custom-type')?.value || 'interval') : 'interval',
       customInterval: Number(document.getElementById('task-custom-interval')?.value || 1),
       customUnit: document.getElementById('task-custom-unit')?.value || 'days',
+      customNth: Number(document.getElementById('task-custom-nth')?.value || 1),
       weeklyWeekdays: recurrence === 'weekly' ? getWeeklyWeekdays() : [],
-      customWeekdays: recurrence === 'custom' ? getCustomWeekdays() : [],
+      customWeekdays: recurrence === 'custom' && document.getElementById('task-custom-type')?.value === 'weekdays' ? getCustomWeekdays() : [],
       notes,
       steps: [],
       completed: tasks[taskId]?.completed || false,
@@ -3564,8 +3715,10 @@ window.saveTask = async () => {
           endTime: localData.endTime,
           recurrence: localData.recurrence,
           hourlyInterval: localData.hourlyInterval,
+          customType: localData.customType,
           customInterval: localData.customInterval,
           customUnit: localData.customUnit,
+          customNth: localData.customNth,
           weeklyWeekdays: localData.weeklyWeekdays,
           customWeekdays: localData.customWeekdays,
           notes: localData.notes,
@@ -3927,23 +4080,98 @@ window.saveJournalEntry = async () => {
 
 function renderJournalEntries() {
   const list = document.getElementById('entries-list');
-  const arr = Object.values(journals);
+  const arr = Object.values(journals).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (arr.length === 0) {
     list.innerHTML = `<div class="empty-state"><span class="empty-icon">📓</span><p>No journal entries yet. Start writing!</p></div>`;
     return;
   }
   list.innerHTML = arr.map(e => {
     const d = e.date ? new Date(e.date) : new Date();
-    return `<div class="journal-entry-card">
+    return `<div class="journal-entry-card" id="jcard-${e.id}">
       <div class="entry-header">
         <span class="entry-date">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})} · ${d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</span>
         <span class="entry-mood">${e.mood || '📓'}</span>
       </div>
       <div class="entry-text">${escHtml(e.text)}</div>
       ${e.tags && e.tags.length > 0 ? `<div class="entry-tags">${e.tags.map(t => `<span class="entry-tag">${t}</span>`).join('')}</div>` : ''}
+      <div class="journal-entry-actions">
+        <button class="btn-journal-edit" onclick="openJournalEdit('${e.id}')">✏️ EDIT</button>
+        <button class="btn-journal-delete" onclick="deleteJournalEntry('${e.id}')">🗑 DELETE</button>
+      </div>
     </div>`;
   }).join('');
 }
+
+// ── Journal edit helpers ──
+let journalEditMood = '';
+let journalEditTags = [];
+
+window.openJournalEdit = (id) => {
+  const e = journals[id];
+  if (!e) return;
+  journalEditMood = e.mood || '';
+  journalEditTags = [...(e.tags || [])];
+  document.getElementById('journal-edit-id').value   = id;
+  document.getElementById('journal-edit-text').value = e.text || '';
+  // Restore mood buttons
+  document.querySelectorAll('#journal-edit-mood-row .mood-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mood === journalEditMood);
+  });
+  // Restore tags
+  document.querySelectorAll('#journal-edit-tags .tag-chip').forEach(chip => {
+    chip.classList.toggle('sel', journalEditTags.includes(chip.textContent.trim()));
+  });
+  openModal('journal-edit-modal');
+};
+
+window.selectEditMood = (el, mood) => {
+  journalEditMood = mood;
+  document.querySelectorAll('#journal-edit-mood-row .mood-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+};
+
+window.toggleEditTag = (el, tag) => {
+  if (journalEditTags.includes(tag)) {
+    journalEditTags = journalEditTags.filter(t => t !== tag);
+    el.classList.remove('sel');
+  } else {
+    journalEditTags.push(tag);
+    el.classList.add('sel');
+  }
+};
+
+window.saveJournalEdit = async () => {
+  const id   = document.getElementById('journal-edit-id').value;
+  const text = document.getElementById('journal-edit-text').value.trim();
+  if (!text) { alert('Entry text cannot be empty.'); return; }
+  const entry = journals[id];
+  if (!entry) return;
+  entry.text = text;
+  entry.mood = journalEditMood;
+  entry.tags = [...journalEditTags];
+  journals[id] = entry;
+  persistLocalState();
+  renderJournalEntries();
+  closeModal('journal-edit-modal');
+  if (currentUser?.uid) {
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid, 'journals', id),
+        { text: entry.text, mood: entry.mood, tags: entry.tags }, { merge: true });
+    } catch (e) { showSaveError('Journal entry', e); }
+  }
+};
+
+window.deleteJournalEntry = async (id) => {
+  if (!confirm('Delete this journal entry? This cannot be undone.')) return;
+  delete journals[id];
+  persistLocalState();
+  renderJournalEntries();
+  if (currentUser?.uid) {
+    try {
+      await deleteDoc(doc(db, 'users', currentUser.uid, 'journals', id));
+    } catch (e) { console.warn('Firestore journal delete failed:', e); }
+  }
+};
 
 
 // ─────────────────────────────────────────────
