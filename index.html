@@ -357,6 +357,91 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
   .header-title{font-size:15px;}
 }
 
+
+/* ── FINAL GOLD PRODUCTIVITY UPDATE ── */
+:root{
+  --bg-void:#fff2b8;
+  --bg-deep:#fff7d1;
+  --bg-card:rgba(255,255,255,0.82);
+  --bg-card2:#fff0ae;
+  --bg-input:#fff9dc;
+  --border:rgba(126,83,0,0.22);
+  --border-glow:rgba(177,121,0,0.45);
+  --text-hero:#2b1a00;
+  --text-main:#4a3300;
+  --text-dim:#806000;
+  --text-faint:#a77a00;
+  --purple:#8a5a00;
+  --purple-dim:#5f3b00;
+  --cyan:#006e7a;
+  --green:#167a3c;
+  --red:#b42318;
+  --orange:#b45309;
+  --shadow-card:0 10px 30px rgba(126,83,0,.16);
+}
+html,body{background:#fff2b8!important;color:var(--text-main)!important;}
+body{background:
+  radial-gradient(circle at 12% 0%, rgba(255,255,255,.78), transparent 26%),
+  radial-gradient(circle at 88% 6%, rgba(255,208,64,.65), transparent 32%),
+  linear-gradient(135deg,#ffe27a 0%,#fff4bd 45%,#f4b938 100%)!important;
+}
+#app{background:linear-gradient(145deg,rgba(255,250,221,.94),rgba(255,221,101,.82))!important;border-color:rgba(126,83,0,.28)!important;}
+#top-header,#bottom-nav{background:rgba(255,246,198,.86)!important;border-color:rgba(126,83,0,.2)!important;backdrop-filter:blur(14px);}
+.hero-banner,.focus-timer-card,.task-card,.role-card,.journal-entry-card,.stat-card,.streak-banner,.auth-card,.modal-sheet,.task-mini,.settings-card,.status-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.9),rgba(255,237,160,.82))!important;
+  border:1px solid rgba(126,83,0,.22)!important;
+  box-shadow:0 10px 30px rgba(126,83,0,.13)!important;
+  color:var(--text-main)!important;
+}
+.header-title,.section-title,.role-name,.task-title,.task-mini-title,.modal-title,.hero-info h2{color:var(--text-hero)!important;}
+.hero-class,.timer-label,.quest-time-badge,.simple-toggle-label,.xp-label strong{color:#9a6500!important;}
+.form-input,.form-select,.journal-textarea{background:#fff9dc!important;color:#2b1a00!important;border-color:rgba(126,83,0,.24)!important;}
+.form-input::placeholder,.journal-textarea::placeholder{color:#9a7a28!important;}
+.btn-add,.btn-auth,.btn-modal-save,.journal-tab.active,.auth-tab.active,.filter-chip.active,.btn-timer.play{
+  background:linear-gradient(135deg,#ffd84a,#b87600)!important;color:#201100!important;border:1px solid rgba(126,83,0,.25)!important;
+}
+.nav-item.active{background:rgba(255,216,74,.35)!important;border:1px solid rgba(126,83,0,.22);}
+.nav-item .nav-label,.filter-chip,.deadline-badge.ok,.btn-role-action,.btn-task-sm,.time-label{color:#6f5100!important;}
+body.simple-mode #hero-banner,
+body.simple-mode .hero-banner,
+body.simple-mode .stats-grid,
+body.simple-mode #streak-banner,
+body.simple-mode .gamified,
+body.simple-mode .xp-badge,
+body.simple-mode .xp-section,
+body.simple-mode .xp-bar-wrap,
+body.simple-mode .xp-reward-group,
+body.simple-mode .role-level-badge,
+body.simple-mode .role-xp-row,
+body.simple-mode .levelup-toast,
+body.simple-mode .xp-pop{display:none!important;}
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 16px;}
+.status-card{padding:16px;border-radius:16px;cursor:pointer;position:relative;overflow:hidden;}
+.status-card:active{transform:scale(.98);}
+.status-card .status-value{font-family:'Cinzel',serif;font-size:28px;font-weight:900;color:#7a4d00;}
+.status-card .status-label{font-family:'Rajdhani',sans-serif;font-weight:800;letter-spacing:1px;color:#5b3c00;text-transform:uppercase;}
+.status-card.pending{border-left:5px solid #b87600!important;}
+.status-card.overdue{border-left:5px solid var(--red)!important;}
+.timeline-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 14px;}
+.timeline-nav-date{text-align:center;flex:1;}
+.timeline-nav-date strong{display:block;font-family:'Cinzel',serif;color:var(--text-hero);font-size:15px;}
+.timeline-nav-date span{display:block;font-family:'Rajdhani',sans-serif;color:#7b5b00;font-size:12px;letter-spacing:1px;margin-top:2px;}
+.timeline-day-btn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(126,83,0,.25);background:linear-gradient(135deg,#fff6c7,#ffd84a);color:#3b2500;font-size:22px;font-weight:900;cursor:pointer;box-shadow:0 6px 18px rgba(126,83,0,.14);}
+.slot-task{background:linear-gradient(135deg,#fff8dc,#ffe27a)!important;color:#2b1a00!important;border:1px solid rgba(126,83,0,.18);}
+.settings-card{border-radius:18px;padding:16px;margin-bottom:12px;}
+.settings-card h3{font-family:'Cinzel',serif;color:#3b2500;font-size:15px;margin-bottom:8px;}
+.settings-card p,.settings-card li{font-size:14px;line-height:1.55;color:#4a3300;margin-bottom:6px;}
+.settings-card ul{padding-left:20px;}
+@media (max-width:899px){
+  #bottom-nav{gap:0;}
+  .nav-item .nav-icon{font-size:20px;}
+  .nav-item .nav-label{font-size:9px;}
+  .status-grid{grid-template-columns:1fr 1fr;}
+}
+@media (min-width:900px){
+  #bottom-nav{background:linear-gradient(180deg,#fff0a5,#fff8d9)!important;}
+}
+
 </style>
 </head>
 <body>
@@ -454,6 +539,18 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
           </div>
         </div>
 
+        <!-- Pending / Overdue Status Cards -->
+        <div class="status-grid" id="dashboard-status-grid">
+          <div class="status-card pending" onclick="openTaskStatus('pending')">
+            <div class="status-value" id="stat-pending">0</div>
+            <div class="status-label">Pending</div>
+          </div>
+          <div class="status-card overdue" onclick="openTaskStatus('overdue')">
+            <div class="status-value" id="stat-overdue">0</div>
+            <div class="status-label">Overdue</div>
+          </div>
+        </div>
+
         <!-- Streak Banner -->
         <div class="streak-banner" id="streak-banner">
           <span class="streak-icon">🔥</span>
@@ -515,9 +612,13 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
       </div>
 
       <!-- Day Timeline -->
-      <div class="section-hdr">
-        <span class="section-title">TODAY'S TIMELINE</span>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--text-dim);" id="timeline-date"></span>
+      <div class="timeline-nav">
+        <button class="timeline-day-btn" onclick="changeTimelineDay(-1)" aria-label="Previous day">‹</button>
+        <div class="timeline-nav-date">
+          <strong id="timeline-date-main">Today</strong>
+          <span id="timeline-date"></span>
+        </div>
+        <button class="timeline-day-btn" onclick="changeTimelineDay(1)" aria-label="Next day">›</button>
       </div>
       <div class="timeline-grid" id="timeline-grid"></div>
     </div>
@@ -563,6 +664,46 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
       </div>
     </div>
 
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+      <div class="section-hdr" style="margin-top:16px;">
+        <span class="section-title">SETTINGS & GUIDE</span>
+      </div>
+      <div class="settings-card">
+        <h3>🏠 Home</h3>
+        <p>Home shows today’s tasks, pending tasks, and overdue tasks. Tap Pending or Overdue to jump directly into the filtered task list.</p>
+      </div>
+      <div class="settings-card">
+        <h3>✅ Tasks</h3>
+        <ul>
+          <li>Add tasks with start date, start time, end time, priority, role, recurrence, and sub-steps.</li>
+          <li>Pending means the task is not complete and its scheduled end time has not passed.</li>
+          <li>Overdue means the task is not complete and its scheduled date/time has passed.</li>
+        </ul>
+      </div>
+      <div class="settings-card">
+        <h3>⏱️ Timeline</h3>
+        <p>The Timeline places tasks based on the selected day and the task start/end time. Use the left and right arrows to move between days.</p>
+      </div>
+      <div class="settings-card">
+        <h3>🎭 Roles</h3>
+        <p>Roles help group your tasks by life area, such as Career, Fitness, Family, Learning, Finance, or Health. You can add/edit roles from the Roles screen or from the task form.</p>
+      </div>
+      <div class="settings-card">
+        <h3>🔁 Recurrence</h3>
+        <p>Daily, weekly, hourly, and custom recurrence are supported. Custom recurrence can repeat by interval or by selected weekdays from Monday to Sunday.</p>
+      </div>
+      <div class="settings-card">
+        <h3>✨ Simple Mode</h3>
+        <p>Simple Mode hides XP, levels, streaks, and gamified visuals. Your tasks, roles, timeline, journal, and settings remain available.</p>
+      </div>
+      <div class="settings-card">
+        <h3>☁️ Sync</h3>
+        <p>Tasks save locally first and then sync to Firebase when permissions and internet are available. Use the same login email on laptop and mobile for cross-device sync.</p>
+      </div>
+    </div>
+
   </div><!-- end main-content -->
 
   <!-- BOTTOM NAV -->
@@ -570,10 +711,6 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
     <div class="nav-item active" data-screen="dashboard" onclick="switchScreen('dashboard',this)">
       <span class="nav-icon">🏠</span>
       <span class="nav-label">Home</span>
-    </div>
-    <div class="nav-item" data-screen="roles" onclick="switchScreen('roles',this)">
-      <span class="nav-icon">🎭</span>
-      <span class="nav-label">Roles</span>
     </div>
     <div class="nav-item" data-screen="tasks" onclick="switchScreen('tasks',this)">
       <span class="nav-icon">⚔️</span>
@@ -586,6 +723,14 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
     <div class="nav-item" data-screen="journal" onclick="switchScreen('journal',this)">
       <span class="nav-icon">📓</span>
       <span class="nav-label">Journal</span>
+    </div>
+    <div class="nav-item" data-screen="roles" onclick="switchScreen('roles',this)">
+      <span class="nav-icon">🎭</span>
+      <span class="nav-label">Roles</span>
+    </div>
+    <div class="nav-item" data-screen="settings" onclick="switchScreen('settings',this)">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Settings</span>
     </div>
   </div>
 </div>
@@ -782,6 +927,7 @@ let timerInterval = null;
 let timerSeconds = 25 * 60;
 let timerRunning = false;
 let unsubRoles = null, unsubTasks = null, unsubJournals = null, unsubUser = null;
+let selectedTimelineDate = new Date();
 
 // ─────────────────────────────────────────────
 // LOCAL-FIRST CACHE FALLBACK
@@ -994,7 +1140,7 @@ window.switchScreen = (name, navEl) => {
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
   document.getElementById('main-content').scrollTop = 0;
-  const titles = { dashboard: '⚔️ DASHBOARD', roles: '🎭 LIFE ROLES', tasks: '✅ TASKS', timeline: '⏱️ TIMELINE', journal: '📓 JOURNAL' };
+  const titles = { dashboard: '🏠 HOME', tasks: '✅ TASKS', timeline: '⏱️ TIMELINE', journal: '📓 JOURNAL', roles: '🎭 LIFE ROLES', settings: '⚙️ SETTINGS' };
   document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
   if (name === 'tasks') renderTasks();
@@ -1129,6 +1275,35 @@ function isTaskForDate(t, date) {
   return baseDay.getTime() === target.getTime();
 }
 
+function taskDateTime(t, which = 'end') {
+  const base = parseDateOnly(t.startDate || t.deadline) || startOfDay(new Date());
+  const mins = timeToMinutes(which === 'start' ? t.startTime : (t.endTime || t.startTime));
+  const d = new Date(base);
+  if (mins !== null) d.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+  else if (which === 'end') d.setHours(23, 59, 59, 999);
+  else d.setHours(0, 0, 0, 0);
+  return d;
+}
+function isTaskOverdue(t, ref = new Date()) {
+  if (t.completed) return false;
+  if (t.recurrence && t.recurrence !== 'none') {
+    if (!isTaskForDate(t, ref)) return false;
+    const endMin = timeToMinutes(t.endTime || t.startTime);
+    if (endMin === null) return false;
+    const end = new Date(ref);
+    end.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
+    return ref > end;
+  }
+  return ref > taskDateTime(t, 'end');
+}
+function isTaskPending(t, ref = new Date()) {
+  return !t.completed && !isTaskOverdue(t, ref);
+}
+window.openTaskStatus = (status) => {
+  setTaskFilter(status);
+  switchScreen('tasks', document.querySelector('.nav-item[data-screen="tasks"]'));
+};
+
 // ─────────────────────────────────────────────
 // RENDER DASHBOARD
 // ─────────────────────────────────────────────
@@ -1155,6 +1330,12 @@ function renderDashboard() {
   }).length;
   document.getElementById('stat-tasks').textContent = completedToday;
   document.getElementById('stat-roles').textContent = Object.keys(roles).length;
+  const pendingCount = Object.values(tasks).filter(t => isTaskPending(t)).length;
+  const overdueCount = Object.values(tasks).filter(t => isTaskOverdue(t)).length;
+  const pendingEl = document.getElementById('stat-pending');
+  const overdueEl = document.getElementById('stat-overdue');
+  if (pendingEl) pendingEl.textContent = pendingCount;
+  if (overdueEl) overdueEl.textContent = overdueCount;
 
   const streak = userData.streak || 0;
   document.getElementById('stat-streak').textContent = streak + '🔥';
@@ -1387,9 +1568,9 @@ function renderTasks() {
   today.setHours(0, 0, 0, 0);
 
   let arr = Object.values(tasks);
-  if (taskFilter === 'pending') arr = arr.filter(t => !t.completed);
+  if (taskFilter === 'pending') arr = arr.filter(t => isTaskPending(t));
   else if (taskFilter === 'completed') arr = arr.filter(t => t.completed);
-  else if (taskFilter === 'overdue') arr = arr.filter(t => !t.completed && t.deadline && new Date(t.deadline) < today);
+  else if (taskFilter === 'overdue') arr = arr.filter(t => isTaskOverdue(t));
 
   arr.sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -1661,42 +1842,60 @@ window.saveTask = async () => {
 // ─────────────────────────────────────────────
 function renderTimeline() {
   const grid = document.getElementById('timeline-grid');
+  const selected = selectedTimelineDate ? new Date(selectedTimelineDate) : new Date();
+  selected.setHours(0,0,0,0);
   const now = new Date();
-  document.getElementById('timeline-date').textContent = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  const isToday = selected.toDateString() === now.toDateString();
 
-  const tasksByHour = {};
-  Object.values(tasks).forEach(t => {
-    if (!isTaskForDate(t, now)) return;
-    const startMin = timeToMinutes(t.startTime);
-    const endMin = timeToMinutes(t.endTime);
-    if (t.recurrence === 'hourly' && startMin !== null) {
+  const mainDate = document.getElementById('timeline-date-main');
+  const subDate = document.getElementById('timeline-date');
+  if (mainDate) {
+    mainDate.textContent = selected.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  if (subDate) {
+    subDate.textContent = isToday ? 'Today' : selected.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function occurrencesForTask(t) {
+    if (!isTaskForDate(t, selected)) return [];
+    const startMinRaw = timeToMinutes(t.startTime);
+    const endMinRaw = timeToMinutes(t.endTime);
+    const defaultStart = startMinRaw ?? 9 * 60;
+    const defaultEnd = endMinRaw !== null && endMinRaw > defaultStart ? endMinRaw : defaultStart + 60;
+
+    if (t.recurrence === 'hourly' && startMinRaw !== null) {
       const interval = Math.max(1, Number(t.hourlyInterval || 1)) * 60;
-      const finalMin = endMin !== null && endMin > startMin ? endMin : 23 * 60 + 59;
-      for (let min = startMin; min <= finalMin; min += interval) {
-        const h = Math.floor(min / 60);
-        if (!tasksByHour[h]) tasksByHour[h] = [];
-        tasksByHour[h].push({ ...t, occurrenceTime: `${String(h).padStart(2,'0')}:${String(min % 60).padStart(2,'0')}` });
+      const finalMin = endMinRaw !== null && endMinRaw > startMinRaw ? endMinRaw : 23 * 60 + 59;
+      const out = [];
+      for (let min = startMinRaw; min <= finalMin; min += interval) {
+        out.push({ ...t, _startMin: min, _endMin: Math.min(min + 60, 24 * 60 - 1), occurrenceTime: `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}` });
       }
-      return;
+      return out;
     }
-    const h = startMin !== null ? Math.floor(startMin / 60) : (t.deadline ? 9 : null);
-    if (h === null) return;
-    if (!tasksByHour[h]) tasksByHour[h] = [];
-    tasksByHour[h].push(t);
-  });
+    return [{ ...t, _startMin: defaultStart, _endMin: defaultEnd }];
+  }
+
+  const occurrences = Object.values(tasks).flatMap(occurrencesForTask)
+    .sort((a,b) => a._startMin - b._startMin);
 
   let html = '';
   for (let h = 0; h <= 23; h++) {
+    const slotStart = h * 60;
+    const slotEnd = slotStart + 60;
     const label = h === 0 ? '12AM' : h === 12 ? '12PM' : h < 12 ? `${h}AM` : `${h-12}PM`;
-    const isCurrent = h === now.getHours();
-    const slotTasks = (tasksByHour[h] || []).sort((a,b) => (timeToMinutes(a.occurrenceTime || a.startTime) ?? 0) - (timeToMinutes(b.occurrenceTime || b.startTime) ?? 0));
+    const isCurrent = isToday && h === now.getHours();
+    const slotTasks = occurrences.filter(t => t._startMin < slotEnd && t._endMin > slotStart);
     html += `<div class="time-slot ${isCurrent ? 'current-hour' : ''}">
       <div class="time-label">${label}</div>
       <div class="slot-content">
-        ${slotTasks.map(t => `<div class="slot-task ${t.completed ? 'completed-slot' : ''}" style="border-left-color:${t.roleId && roles[t.roleId] ? roles[t.roleId].color : 'var(--gold)'}">
-          <span class="slot-time">${t.occurrenceTime || formatTimeRange(t) || label}</span>
-          ${t.completed ? '✅' : '🗡️'} ${escHtml(t.title)}
-        </div>`).join('')}
+        ${slotTasks.map(t => {
+          const shownRange = t.occurrenceTime || formatTimeRange(t) || label;
+          const roleColor = t.roleId && roles[t.roleId] ? roles[t.roleId].color : 'var(--gold)';
+          return `<div class="slot-task ${t.completed ? 'completed-slot' : ''}" style="border-left-color:${roleColor}">
+            <span class="slot-time">${shownRange}</span>
+            ${t.completed ? '✅' : isTaskOverdue(t, isToday ? now : selected) ? '⚠️' : '🗡️'} ${escHtml(t.title)}
+          </div>`;
+        }).join('')}
         ${isCurrent ? `<div style="width:100%;height:2px;background:var(--cyan);border-radius:2px;margin-top:2px;box-shadow:0 0 8px var(--cyan)"></div>` : ''}
       </div>
     </div>`;
@@ -1708,6 +1907,13 @@ function renderTimeline() {
     if (currentSlot) currentSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 100);
 }
+
+window.changeTimelineDay = (offset) => {
+  const d = selectedTimelineDate ? new Date(selectedTimelineDate) : new Date();
+  d.setDate(d.getDate() + offset);
+  selectedTimelineDate = d;
+  renderTimeline();
+};
 
 // ─────────────────────────────────────────────
 // FOCUS TIMER
