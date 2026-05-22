@@ -594,6 +594,36 @@ body.simple-mode .xp-pop{display:none!important;}
   .settings-toggle-row p{padding-right:6px;}
 }
 
+
+/* ── HQ COMMAND ANALYTICS CARD ── */
+.insights-card{background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(255,239,170,.78));border:1px solid rgba(126,83,0,.22);border-radius:22px;padding:16px;margin:14px 0 18px;box-shadow:0 12px 32px rgba(126,83,0,.14);}
+.insights-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.insights-kicker{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:1.4px;color:#8a5a00;text-transform:uppercase;}
+.insights-head h3{font-family:'Cinzel',serif;font-size:16px;color:#2b1a00;margin-top:2px;letter-spacing:.8px;}
+.insights-score{min-width:58px;height:38px;border-radius:999px;background:linear-gradient(135deg,#ffd84a,#b87600);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-weight:900;color:#201100;box-shadow:0 8px 18px rgba(126,83,0,.18);}
+.insights-body{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;}
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.task-donut{--completed:0deg;--pending:0deg;width:132px;height:132px;border-radius:50%;background:conic-gradient(var(--green) 0 var(--completed), #b87600 var(--completed) var(--pending), var(--red) var(--pending) 360deg);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:inset 0 0 16px rgba(0,0,0,.08),0 8px 20px rgba(126,83,0,.14);}
+.task-donut::after{content:'';position:absolute;width:82px;height:82px;border-radius:50%;background:#fff8dc;border:1px solid rgba(126,83,0,.16);}
+.task-donut span{position:relative;z-index:1;font-family:'Cinzel',serif;font-size:24px;font-weight:900;color:#2b1a00;}
+.donut-caption{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:1px;color:#7b5b00;text-transform:uppercase;}
+.insights-metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.metric-row{border:1px solid rgba(126,83,0,.16);background:rgba(255,255,255,.64);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.metric-row span{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:.8px;color:#6f5100;text-transform:uppercase;}
+.metric-row strong{font-family:'Cinzel',serif;font-size:18px;color:#2b1a00;}
+.metric-row.completed{border-left:5px solid var(--green);}
+.metric-row.pending{border-left:5px solid #b87600;}
+.metric-row.overdue{border-left:5px solid var(--red);}
+.metric-row.today{border-left:5px solid #006e7a;}
+.role-distribution{display:grid;gap:8px;margin-top:14px;}
+.role-bar-row{display:grid;grid-template-columns:110px 1fr 34px;gap:8px;align-items:center;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:900;color:#5b3c00;}
+.role-bar-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.role-bar-track{height:10px;border-radius:999px;background:rgba(126,83,0,.14);overflow:hidden;}
+.role-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#ffd84a,#b87600);}
+.hero-banner{margin-top:0;}
+#screen-roles .hero-banner{margin-bottom:18px;}
+@media (max-width:899px){.insights-body{grid-template-columns:1fr}.task-donut{width:120px;height:120px}.task-donut::after{width:74px;height:74px}.insights-metrics{grid-template-columns:1fr 1fr}.role-bar-row{grid-template-columns:92px 1fr 30px}.insights-head h3{font-size:15px;}}
+
 </style>
 </head>
 <body>
@@ -650,43 +680,6 @@ body.simple-mode .xp-pop{display:none!important;}
     <!-- DASHBOARD -->
     <div class="screen active" id="screen-dashboard">
       <div style="padding:0 0 8px;">
-        <!-- Hero Banner -->
-        <div class="hero-banner gamified" id="hero-banner">
-          <div class="hero-top">
-            <div class="hero-avatar-lg" id="dash-avatar">🧙</div>
-            <div class="hero-info">
-              <h2 id="dash-name">Hero</h2>
-              <div class="hero-class" id="dash-class">Life Adventurer</div>
-              <div class="hero-level" id="dash-level">LVL 1</div>
-            </div>
-          </div>
-          <div class="hero-control-row gamified">
-            <select class="hero-emoji-select" id="hero-emoji-select" onchange="saveHeroEmoji(this.value)" aria-label="Hero emoji">
-              <option value="🧙">🧙 Wizard</option>
-              <option value="⚔️">⚔️ Warrior</option>
-              <option value="🛡️">🛡️ Guardian</option>
-              <option value="🚀">🚀 Builder</option>
-              <option value="📚">📚 Scholar</option>
-              <option value="🧘">🧘 Sage</option>
-              <option value="💼">💼 Professional</option>
-              <option value="🦁">🦁 Leader</option>
-              <option value="🌟">🌟 Hero</option>
-            </select>
-            <input class="hero-custom-input" id="hero-name-input" placeholder="Hero name" aria-label="Custom hero name"/>
-            <input class="hero-custom-input" id="hero-class-input" placeholder="Class title" aria-label="Custom class title"/>
-            <button type="button" class="hero-reset-btn" onclick="saveHeroIdentity()">Save Hero</button>
-            <button type="button" class="hero-reset-btn" onclick="resetHeroXP()">Reset Hero XP</button>
-          </div>
-          <div class="xp-section">
-            <div class="xp-label">
-              <span>TOTAL XP</span>
-              <strong id="dash-xp-text">0 / 100 XP</strong>
-            </div>
-            <div class="xp-bar-wrap">
-              <div class="xp-bar" id="dash-xp-bar" style="width:0%"></div>
-            </div>
-          </div>
-        </div>
 
         <!-- Stats Grid -->
         <div class="stats-grid gamified">
@@ -718,6 +711,30 @@ body.simple-mode .xp-pop{display:none!important;}
             <div class="status-value" id="stat-completed">0</div>
             <div class="status-label">Completed</div>
           </div>
+        </div>
+
+        <!-- Command Analytics -->
+        <div class="insights-card" id="hq-insights-card">
+          <div class="insights-head">
+            <div>
+              <div class="insights-kicker">COMMAND ANALYTICS</div>
+              <h3>Task Control Snapshot</h3>
+            </div>
+            <div class="insights-score" id="insights-score">0%</div>
+          </div>
+          <div class="insights-body">
+            <div class="donut-wrap">
+              <div class="task-donut" id="task-donut"><span id="task-donut-total">0</span></div>
+              <div class="donut-caption">Total Tasks</div>
+            </div>
+            <div class="insights-metrics">
+              <div class="metric-row completed"><span>Completed</span><strong id="insight-completed">0</strong></div>
+              <div class="metric-row pending"><span>Pending</span><strong id="insight-pending">0</strong></div>
+              <div class="metric-row overdue"><span>Overdue</span><strong id="insight-overdue">0</strong></div>
+              <div class="metric-row today"><span>Due Today</span><strong id="insight-today">0</strong></div>
+            </div>
+          </div>
+          <div class="role-distribution" id="role-distribution"></div>
         </div>
 
         <!-- All Pending / Overdue Overview -->
@@ -762,6 +779,46 @@ body.simple-mode .xp-pop{display:none!important;}
         <span class="section-title">ROLES & RESPONSIBILITIES</span>
         <button class="btn-add" onclick="openRoleModal()">+ ADD ROLE</button>
       </div>
+      <div class="section-hdr compact">
+        <span class="section-title">HERO PROFILE</span>
+      </div>
+        <!-- Hero Banner -->
+        <div class="hero-banner gamified" id="hero-banner">
+          <div class="hero-top">
+            <div class="hero-avatar-lg" id="dash-avatar">🧙</div>
+            <div class="hero-info">
+              <h2 id="dash-name">Hero</h2>
+              <div class="hero-class" id="dash-class">Life Adventurer</div>
+              <div class="hero-level" id="dash-level">LVL 1</div>
+            </div>
+          </div>
+          <div class="hero-control-row gamified">
+            <select class="hero-emoji-select" id="hero-emoji-select" onchange="saveHeroEmoji(this.value)" aria-label="Hero emoji">
+              <option value="🧙">🧙 Wizard</option>
+              <option value="⚔️">⚔️ Warrior</option>
+              <option value="🛡️">🛡️ Guardian</option>
+              <option value="🚀">🚀 Builder</option>
+              <option value="📚">📚 Scholar</option>
+              <option value="🧘">🧘 Sage</option>
+              <option value="💼">💼 Professional</option>
+              <option value="🦁">🦁 Leader</option>
+              <option value="🌟">🌟 Hero</option>
+            </select>
+            <input class="hero-custom-input" id="hero-name-input" placeholder="Hero name" aria-label="Custom hero name"/>
+            <input class="hero-custom-input" id="hero-class-input" placeholder="Class title" aria-label="Custom class title"/>
+            <button type="button" class="hero-reset-btn" onclick="saveHeroIdentity()">Save Hero</button>
+            <button type="button" class="hero-reset-btn" onclick="resetHeroXP()">Reset Hero XP</button>
+          </div>
+          <div class="xp-section">
+            <div class="xp-label">
+              <span>TOTAL XP</span>
+              <strong id="dash-xp-text">0 / 100 XP</strong>
+            </div>
+            <div class="xp-bar-wrap">
+              <div class="xp-bar" id="dash-xp-bar" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
       <div id="roles-list"></div>
     </div>
 
@@ -1611,6 +1668,52 @@ window.resetHeroXP = async () => {
   }
 };
 
+
+function renderTaskInsights() {
+  const allTasks = Object.values(tasks || {});
+  const total = allTasks.length;
+  const completed = allTasks.filter(t => t.completed).length;
+  const overdue = allTasks.filter(t => isTaskOverdue(t)).length;
+  const pending = allTasks.filter(t => isTaskPending(t)).length;
+  const today = allTasks.filter(t => isTaskForDate(t, new Date()) && !t.completed).length;
+  const completionPct = total ? Math.round((completed / total) * 100) : 0;
+
+  const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+  setText('insights-score', `${completionPct}%`);
+  setText('task-donut-total', total);
+  setText('insight-completed', completed);
+  setText('insight-pending', pending);
+  setText('insight-overdue', overdue);
+  setText('insight-today', today);
+
+  const donut = document.getElementById('task-donut');
+  if (donut) {
+    const completedDeg = total ? (completed / total) * 360 : 0;
+    const pendingDeg = total ? completedDeg + (pending / total) * 360 : 0;
+    donut.style.setProperty('--completed', `${completedDeg}deg`);
+    donut.style.setProperty('--pending', `${pendingDeg}deg`);
+  }
+
+  const roleCounts = {};
+  allTasks.forEach(t => {
+    const key = t.roleId && roles[t.roleId] ? t.roleId : '_none';
+    roleCounts[key] = (roleCounts[key] || 0) + 1;
+  });
+  const topRoles = Object.entries(roleCounts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 4);
+  const maxRoleCount = Math.max(1, ...topRoles.map(([,count]) => count));
+  const roleDist = document.getElementById('role-distribution');
+  if (roleDist) {
+    roleDist.innerHTML = topRoles.length ? topRoles.map(([roleId, count]) => {
+      const role = roles[roleId];
+      const name = role ? `${role.emoji || '🎯'} ${escHtml(role.name)}` : 'Unassigned';
+      const pct = Math.max(6, Math.round((count / maxRoleCount) * 100));
+      return `<div class="role-bar-row"><div class="role-bar-name">${name}</div><div class="role-bar-track"><div class="role-bar-fill" style="width:${pct}%"></div></div><div>${count}</div></div>`;
+    }).join('') : `<div class="hq-list-note">Add tasks to activate role distribution insights.</div>`;
+  }
+}
+
 // ─────────────────────────────────────────────
 // RENDER DASHBOARD
 // ─────────────────────────────────────────────
@@ -1663,6 +1766,7 @@ function renderDashboard() {
   }
 
   renderHQTaskOverview();
+  renderTaskInsights();
 
   // Today's tasks
   const today = new Date();
