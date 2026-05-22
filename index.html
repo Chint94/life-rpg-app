@@ -481,6 +481,58 @@ body.simple-mode .xp-pop{display:none!important;}
 .hero-custom-input{background:#fff9dc;border:1px solid rgba(126,83,0,.25);border-radius:999px;padding:8px 12px;color:#2b1a00;font-family:'Rajdhani',sans-serif;font-weight:800;letter-spacing:.5px;outline:none;min-width:118px;max-width:160px;}
 .btn-modal-delete{width:100%;background:linear-gradient(135deg,#b42318,#7f1d1d);border:none;border-radius:12px;padding:13px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:900;font-size:14px;letter-spacing:1.4px;cursor:pointer;margin-top:8px;transition:all .2s;}
 .btn-modal-delete:active{transform:scale(.98);}
+
+/* ── RECURRENCE CHOICE MODAL ── */
+#recur-delete-modal,#recur-repeat-modal{
+  position:fixed;inset:0;z-index:2000;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+#recur-delete-modal.open,#recur-repeat-modal.open{opacity:1;pointer-events:all;}
+.recur-sheet{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;
+  transform:translateY(40px);transition:transform .25s cubic-bezier(.34,1.2,.64,1);
+}
+#recur-delete-modal.open .recur-sheet,#recur-repeat-modal.open .recur-sheet{transform:translateY(0);}
+.recur-sheet-title{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:var(--gold);letter-spacing:1.5px;margin-bottom:6px;}
+.recur-sheet-sub{font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--text-dim);margin-bottom:20px;line-height:1.5;}
+.recur-sheet-btn{
+  width:100%;border:none;border-radius:12px;padding:14px 16px;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;letter-spacing:1px;
+  cursor:pointer;margin-bottom:10px;transition:all .18s;text-align:left;display:flex;align-items:center;gap:10px;
+}
+.recur-sheet-btn:active{transform:scale(.98);}
+.recur-btn-occurrence{background:linear-gradient(135deg,#1a2a40,#0f1a30);border:1px solid var(--cyan);color:var(--cyan);}
+.recur-btn-series{background:linear-gradient(135deg,#2a1020,#1a0810);border:1px solid var(--red);color:var(--red);}
+.recur-btn-cancel{background:var(--bg-card2);border:1px solid var(--border);color:var(--text-dim);}
+.recur-btn-repeat{background:linear-gradient(135deg,#1a2a1a,#0f200f);border:1px solid var(--green);color:var(--green);}
+
+/* Repeat series form inside sheet */
+.recur-repeat-form{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.recur-repeat-form label{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;display:block;}
+.recur-repeat-form input,.recur-repeat-form select{
+  width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;
+  padding:11px 14px;color:var(--text-hero);font-family:'Exo 2',sans-serif;font-size:14px;outline:none;
+}
+.recur-repeat-form input:focus,.recur-repeat-form select:focus{border-color:var(--purple);}
+.recur-repeat-row{display:flex;gap:10px;}
+.recur-repeat-row>*{flex:1;}
+.recur-weekday-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.recur-weekday-chip{
+  background:var(--bg-input);border:1px solid var(--border);border-radius:8px;
+  padding:5px 10px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
+  color:var(--text-dim);cursor:pointer;transition:all .15s;user-select:none;
+}
+.recur-weekday-chip.on{background:var(--purple);border-color:var(--purple);color:#fff;}
+.recur-repeat-section{display:none;}
+.recur-repeat-section.show{display:block;}
+.btn-repeat-series{background:linear-gradient(135deg,var(--green),#16a34a);border:none;border-radius:12px;padding:13px;color:#fff;font-family:'Rajdhani',sans-serif;font-weight:900;font-size:14px;letter-spacing:1.4px;cursor:pointer;margin-top:4px;width:100%;transition:all .2s;}
+.btn-repeat-series:active{transform:scale(.98);}
+.btn-repeat-cancel{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:11px;color:var(--text-dim);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;cursor:pointer;margin-top:6px;width:100%;}
+.repeat-series-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:3px 10px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--green);letter-spacing:0.8px;cursor:pointer;transition:all .15s;}
+.repeat-series-badge:hover{background:rgba(34,197,94,0.22);}
+.recur-history-note{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--text-faint);margin-top:8px;line-height:1.5;}
 .status-card.completed{border-left:5px solid var(--green)!important;}
 .calendar-event-complete{position:absolute;right:7px;top:7px;width:22px;height:22px;border-radius:7px;border:2px solid rgba(126,83,0,.35);background:rgba(255,255,255,.68);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;z-index:2;cursor:pointer;}
 .calendar-event-complete.done{background:var(--green);border-color:var(--green);color:#fff;}
@@ -2497,6 +2549,126 @@ body.simple-mode .xp-pop{display:none!important;}
   </div>
 </div>
 
+<!-- RECURRENCE DELETE CHOICE MODAL -->
+<div id="recur-delete-modal" role="dialog" aria-modal="true">
+  <div class="recur-sheet">
+    <div class="recur-sheet-title">🔄 Delete Recurring Task</div>
+    <div class="recur-sheet-sub" id="recur-delete-sub">This task repeats. What would you like to delete?</div>
+    <button class="recur-sheet-btn recur-btn-occurrence" onclick="recurDeleteOccurrence()">
+      <span>📅</span><span>Delete only this occurrence<br><small style="font-weight:400;font-size:11px;opacity:.75">Other recurrences stay unchanged</small></span>
+    </button>
+    <button class="recur-sheet-btn recur-btn-series" onclick="recurDeleteSeries()">
+      <span>🗑️</span><span>Delete entire series<br><small style="font-weight:400;font-size:11px;opacity:.75">Remove this task and all its recurrences</small></span>
+    </button>
+    <button class="recur-sheet-btn recur-btn-cancel" onclick="closeRecurDeleteModal()">✕ Cancel</button>
+  </div>
+</div>
+
+<!-- REPEAT SERIES MODAL -->
+<div id="recur-repeat-modal" role="dialog" aria-modal="true">
+  <div class="recur-sheet" style="max-height:92dvh;overflow-y:auto;">
+    <div class="recur-sheet-title">🔁 Repeat This Series</div>
+    <div class="recur-sheet-sub">Set a new schedule for this recurring task. Past occurrences are archived and will not be recreated.</div>
+    <div class="recur-repeat-form">
+      <div>
+        <label>New Start Date</label>
+        <input type="date" id="rr-start-date"/>
+      </div>
+      <div>
+        <label>End Date (optional)</label>
+        <input type="date" id="rr-end-date"/>
+      </div>
+      <div class="recur-repeat-row">
+        <div>
+          <label>Start Time (optional)</label>
+          <input type="time" id="rr-start-time"/>
+        </div>
+        <div>
+          <label>End Time (optional)</label>
+          <input type="time" id="rr-end-time"/>
+        </div>
+      </div>
+      <div>
+        <label>Recurrence Type</label>
+        <select id="rr-recurrence" onchange="rrUpdateFields()">
+          <option value="none">One-time</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="hourly">Hourly</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <!-- Weekly days -->
+      <div id="rr-weekly-section" class="recur-repeat-section">
+        <label>Repeat weekly on</label>
+        <div class="recur-weekday-wrap" id="rr-weekly-days">
+          <span class="recur-weekday-chip" data-day="1">Mon</span>
+          <span class="recur-weekday-chip" data-day="2">Tue</span>
+          <span class="recur-weekday-chip" data-day="3">Wed</span>
+          <span class="recur-weekday-chip" data-day="4">Thu</span>
+          <span class="recur-weekday-chip" data-day="5">Fri</span>
+          <span class="recur-weekday-chip" data-day="6">Sat</span>
+          <span class="recur-weekday-chip" data-day="0">Sun</span>
+        </div>
+      </div>
+      <!-- Hourly interval -->
+      <div id="rr-hourly-section" class="recur-repeat-section">
+        <label>Hourly interval</label>
+        <select id="rr-hourly-interval">
+          <option value="1">Every hour</option>
+          <option value="2">Every 2 hours</option>
+          <option value="3">Every 3 hours</option>
+          <option value="4">Every 4 hours</option>
+          <option value="6">Every 6 hours</option>
+        </select>
+      </div>
+      <!-- Custom recurrence -->
+      <div id="rr-custom-section" class="recur-repeat-section">
+        <label>Custom repeat type</label>
+        <select id="rr-custom-type" onchange="rrUpdateCustomFields()">
+          <option value="interval">Every N days / weeks</option>
+          <option value="every2days">Every 2 days</option>
+          <option value="alternate">Every alternate day</option>
+          <option value="nth">Nth day of the month</option>
+          <option value="bimonthly">Every 2 months</option>
+          <option value="quarterly">Quarterly (every 3 months)</option>
+          <option value="annually">Annually (every year)</option>
+          <option value="weekdays">Selected weekdays</option>
+        </select>
+        <div id="rr-custom-interval-row" style="margin-top:10px;">
+          <div class="recur-repeat-row">
+            <input type="number" id="rr-custom-interval" min="1" value="1" style="max-width:80px;"/>
+            <select id="rr-custom-unit">
+              <option value="days">Day(s)</option>
+              <option value="weeks">Week(s)</option>
+            </select>
+          </div>
+        </div>
+        <div id="rr-custom-nth-row" style="display:none;margin-top:10px;">
+          <label>Day of month (1–28)</label>
+          <input type="number" id="rr-custom-nth" min="1" max="28" value="1"/>
+        </div>
+        <div id="rr-custom-weekdays-row" style="display:none;margin-top:10px;">
+          <label>Repeat on selected weekdays</label>
+          <div class="recur-weekday-wrap" id="rr-custom-weekdays">
+            <span class="recur-weekday-chip" data-day="1">Mon</span>
+            <span class="recur-weekday-chip" data-day="2">Tue</span>
+            <span class="recur-weekday-chip" data-day="3">Wed</span>
+            <span class="recur-weekday-chip" data-day="4">Thu</span>
+            <span class="recur-weekday-chip" data-day="5">Fri</span>
+            <span class="recur-weekday-chip" data-day="6">Sat</span>
+            <span class="recur-weekday-chip" data-day="0">Sun</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="recur-history-note">📦 Previous period will be archived in the task's history. You can view it by editing the task.</div>
+    <button class="btn-repeat-series" onclick="rrConfirmRepeat()">🔁 RESTART THIS SERIES</button>
+    <button class="btn-repeat-cancel" onclick="closeRecurRepeatModal()">✕ Cancel</button>
+  </div>
+</div>
+
 <!-- FIREBASE -->
 <script type="module">
 // Prevent browser from restoring previous scroll position on back/forward
@@ -2929,6 +3101,16 @@ function recurrenceLabel(t) {
 }
 function isTaskForDate(t, date) {
   const target = startOfDay(date);
+  // Check skipped dates (individual occurrence deletions)
+  if (t.skippedDates && t.skippedDates.length) {
+    const targetStr = target.toISOString().slice(0, 10);
+    if (t.skippedDates.includes(targetStr)) return false;
+  }
+  // Check recurrence end date
+  if (t.recurrenceEndDate) {
+    const endDay = startOfDay(parseDateOnly(t.recurrenceEndDate));
+    if (endDay && target > endDay) return false;
+  }
   const base = parseDateOnly(t.startDate || t.deadline) || parseDateOnly((t.createdAt?.toDate?.() || new Date()).toISOString?.().slice(0,10)) || target;
   const baseDay = startOfDay(base);
   if (t.recurrence === 'daily' || t.recurrence === 'hourly') return target >= baseDay;
@@ -3474,6 +3656,17 @@ function buildTaskCardHTML(t) {
   }
   const notesHTML = t.notes ? `<div class="task-notes-preview"><div class="task-notes-preview-title">Notes</div>${escHtml(t.notes)}</div>` : '';
 
+  // Show "Repeat Series" badge when task is recurring and completed or past its end date
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  const isPastEnd = t.recurrenceEndDate && today > startOfDay(parseDateOnly(t.recurrenceEndDate));
+  const showRepeat = isRecurring && (t.completed || isPastEnd);
+  const repeatBadge = showRepeat
+    ? `<span class="repeat-series-badge" onclick="openRecurRepeatModal('${t.id}')">🔁 REPEAT SERIES</span>`
+    : '';
+
+  // Pass today's date string for occurrence-level delete context
+  const todayStr = today.toISOString().slice(0, 10);
+
   return `<div class="task-card ${t.completed ? 'completed' : ''}" style="border-left:3px solid ${pColors[t.priority]||'#6b7299'}">
     <div class="task-top">
       <div class="task-check-lg ${t.completed ? 'done' : ''}" onclick="toggleTask('${t.id}',event)"></div>
@@ -3486,13 +3679,14 @@ function buildTaskCardHTML(t) {
           ${deadlineHTML}
           ${recurrenceLabel(t) ? `<span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif">🔄 ${recurrenceLabel(t)}</span>` : ''}
           ${t.gcalSynced ? `<span class="gcal-badge">📅 GCal</span>` : ''}
+          ${repeatBadge}
         </div>
       </div>
     </div>
     ${notesHTML}
     <div class="task-actions">
       <button class="btn-task-sm" onclick="openTaskModal('${t.id}')">✏️ EDIT</button>
-      <button class="btn-task-sm del" onclick="deleteTask('${t.id}')">🗑 DELETE</button>
+      <button class="btn-task-sm del" onclick="deleteTask('${t.id}','${todayStr}')">🗑 DELETE</button>
     </div>
   </div>`;
 }
@@ -3538,10 +3732,79 @@ window.toggleStep = async (taskId, stepIdx) => {
   await updateDoc(doc(db, 'users', currentUser.uid, 'tasks', taskId), { steps });
 };
 
-window.deleteTask = async (id) => {
-  try {
-    if (!id) return;
+// ─────────────────────────────────────────────
+// RECURRENCE DELETE MODAL
+// ─────────────────────────────────────────────
+let _recurDeleteId   = null;
+let _recurDeleteDate = null; // ISO date string of the occurrence being deleted
+
+window.deleteTask = async (id, dateStr) => {
+  if (!id) return;
+  const t = tasks[id];
+  if (!t) return;
+  const isRecurring = t.recurrence && t.recurrence !== 'none';
+  if (isRecurring) {
+    _recurDeleteId   = id;
+    _recurDeleteDate = dateStr || new Date().toISOString().slice(0, 10);
+    const sub = document.getElementById('recur-delete-sub');
+    if (sub) sub.textContent = `"${t.title}" repeats ${recurrenceLabel(t)}. What would you like to delete?`;
+    document.getElementById('recur-delete-modal')?.classList.add('open');
+  } else {
     if (!confirm('Delete this task?')) return;
+    await _doDeleteFullTask(id);
+  }
+};
+
+window.closeRecurDeleteModal = () => {
+  document.getElementById('recur-delete-modal')?.classList.remove('open');
+  _recurDeleteId   = null;
+  _recurDeleteDate = null;
+};
+
+// Close recur modals on backdrop tap
+document.getElementById('recur-delete-modal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('recur-delete-modal')) closeRecurDeleteModal();
+});
+document.getElementById('recur-repeat-modal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('recur-repeat-modal')) closeRecurRepeatModal();
+});
+
+window.recurDeleteOccurrence = async () => {
+  const id      = _recurDeleteId;
+  const dateStr = _recurDeleteDate;
+  closeRecurDeleteModal();
+  if (!id || !dateStr || !tasks[id]) return;
+  try {
+    const t = tasks[id];
+    const skipped = [...(t.skippedDates || [])];
+    if (!skipped.includes(dateStr)) skipped.push(dateStr);
+    tasks[id] = { ...t, skippedDates: skipped, updatedAtLocal: new Date().toISOString() };
+    persistLocalState();
+    renderAllLocal();
+    if (currentUser?.uid) {
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid, 'tasks', id), {
+          skippedDates: skipped,
+          updatedAt: serverTimestamp()
+        });
+      } catch (e) { showSaveError('Occurrence delete', e); }
+    }
+  } catch (e) {
+    console.error('Occurrence delete failed:', e);
+    alert(`Could not delete occurrence: ${e?.message || 'Please try again.'}`);
+  }
+};
+
+window.recurDeleteSeries = async () => {
+  const id = _recurDeleteId;
+  closeRecurDeleteModal();
+  if (!id) return;
+  if (!confirm('Delete the entire series and all its recurrences?')) return;
+  await _doDeleteFullTask(id);
+};
+
+async function _doDeleteFullTask(id) {
+  try {
     delete tasks[id];
     if (editingTaskId === id) editingTaskId = null;
     closeModal('task-modal');
@@ -3555,14 +3818,171 @@ window.deleteTask = async (id) => {
     console.error('Task delete failed:', e);
     alert(`Task could not be deleted: ${e?.message || 'Please try again.'}`);
   }
-};
+}
 
 window.deleteEditingTask = async () => {
   if (!editingTaskId) return;
   const id = editingTaskId;
+  const t  = tasks[id];
   closeModal('task-modal');
-  editingTaskId = null;
-  await deleteTask(id);
+  if (t && t.recurrence && t.recurrence !== 'none') {
+    // Re-use the recurrence sheet from the edit modal context
+    editingTaskId = null;
+    const sub = document.getElementById('recur-delete-sub');
+    if (sub) sub.textContent = `"${t.title}" repeats ${recurrenceLabel(t)}. What would you like to delete?`;
+    _recurDeleteId   = id;
+    _recurDeleteDate = new Date().toISOString().slice(0, 10);
+    document.getElementById('recur-delete-modal')?.classList.add('open');
+  } else {
+    editingTaskId = null;
+    await _doDeleteFullTask(id);
+  }
+};
+
+// ─────────────────────────────────────────────
+// REPEAT SERIES MODAL
+// ─────────────────────────────────────────────
+let _recurRepeatId = null;
+
+window.openRecurRepeatModal = (id) => {
+  const t = tasks[id];
+  if (!t) return;
+  _recurRepeatId = id;
+  // Pre-fill form with current task values
+  const todayStr = new Date().toISOString().slice(0, 10);
+  document.getElementById('rr-start-date').value   = todayStr;
+  document.getElementById('rr-end-date').value      = '';
+  document.getElementById('rr-start-time').value   = t.startTime || '';
+  document.getElementById('rr-end-time').value      = t.endTime   || '';
+  document.getElementById('rr-recurrence').value    = t.recurrence || 'none';
+  document.getElementById('rr-hourly-interval').value = String(t.hourlyInterval || 1);
+  document.getElementById('rr-custom-type').value   = t.customType   || 'interval';
+  document.getElementById('rr-custom-interval').value = String(t.customInterval || 1);
+  document.getElementById('rr-custom-unit').value   = t.customUnit   || 'days';
+  document.getElementById('rr-custom-nth').value    = String(t.customNth || 1);
+  // Set weekday chips
+  rrSetChips('rr-weekly-days',   t.weeklyWeekdays  || []);
+  rrSetChips('rr-custom-weekdays', t.customWeekdays || []);
+  rrUpdateFields();
+  document.getElementById('recur-repeat-modal')?.classList.add('open');
+};
+
+window.closeRecurRepeatModal = () => {
+  document.getElementById('recur-repeat-modal')?.classList.remove('open');
+  _recurRepeatId = null;
+};
+
+// Toggle weekday chip
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('recur-weekday-chip')) {
+    e.target.classList.toggle('on');
+  }
+});
+
+function rrGetChips(wrapperId) {
+  return [...document.querySelectorAll(`#${wrapperId} .recur-weekday-chip.on`)].map(c => Number(c.dataset.day));
+}
+
+function rrSetChips(wrapperId, days) {
+  document.querySelectorAll(`#${wrapperId} .recur-weekday-chip`).forEach(c => {
+    c.classList.toggle('on', days.map(Number).includes(Number(c.dataset.day)));
+  });
+}
+
+window.rrUpdateFields = () => {
+  const v = document.getElementById('rr-recurrence')?.value || 'none';
+  document.getElementById('rr-weekly-section')?.classList.toggle('show', v === 'weekly');
+  document.getElementById('rr-hourly-section')?.classList.toggle('show', v === 'hourly');
+  document.getElementById('rr-custom-section')?.classList.toggle('show', v === 'custom');
+  if (v === 'custom') rrUpdateCustomFields();
+};
+
+window.rrUpdateCustomFields = () => {
+  const ct = document.getElementById('rr-custom-type')?.value || 'interval';
+  document.getElementById('rr-custom-interval-row').style.display = ct === 'interval' ? '' : 'none';
+  document.getElementById('rr-custom-nth-row').style.display      = ct === 'nth'      ? '' : 'none';
+  document.getElementById('rr-custom-weekdays-row').style.display = ct === 'weekdays' ? '' : 'none';
+};
+
+window.rrConfirmRepeat = async () => {
+  const id = _recurRepeatId;
+  if (!id || !tasks[id]) return;
+  const t = tasks[id];
+
+  const newStart = document.getElementById('rr-start-date').value;
+  if (!newStart) { alert('Please set a new start date.'); return; }
+
+  const newEnd        = document.getElementById('rr-end-date').value   || null;
+  const newStartTime  = document.getElementById('rr-start-time').value  || null;
+  const newEndTime    = document.getElementById('rr-end-time').value    || null;
+  const newRecurrence = document.getElementById('rr-recurrence').value  || 'none';
+  const newCustomType = document.getElementById('rr-custom-type').value || 'interval';
+
+  // Archive current period into recurrenceHistory
+  const historyEntry = {
+    archivedAt:        new Date().toISOString(),
+    startDate:         t.startDate   || t.deadline,
+    recurrenceEndDate: t.recurrenceEndDate || null,
+    recurrence:        t.recurrence,
+    skippedDates:      t.skippedDates || [],
+    completed:         t.completed,
+    completedAt:       t.completedAt || null,
+  };
+  const history = [...(t.recurrenceHistory || []), historyEntry];
+
+  const updated = {
+    ...t,
+    startDate:         newStart,
+    deadline:          newStart,
+    recurrenceEndDate: newEnd,
+    startTime:         newStartTime,
+    endTime:           newEndTime,
+    recurrence:        newRecurrence,
+    hourlyInterval:    Number(document.getElementById('rr-hourly-interval').value || 1),
+    customType:        newCustomType,
+    customInterval:    Number(document.getElementById('rr-custom-interval').value || 1),
+    customUnit:        document.getElementById('rr-custom-unit').value || 'days',
+    customNth:         Number(document.getElementById('rr-custom-nth').value || 1),
+    weeklyWeekdays:    newRecurrence === 'weekly'  ? rrGetChips('rr-weekly-days')    : (t.weeklyWeekdays || []),
+    customWeekdays:    (newRecurrence === 'custom' && newCustomType === 'weekdays') ? rrGetChips('rr-custom-weekdays') : (t.customWeekdays || []),
+    intervalWeekdays:  t.intervalWeekdays || [],
+    skippedDates:      [],       // fresh slate for new period
+    completed:         false,
+    completedAt:       null,
+    recurrenceHistory: history,
+    updatedAtLocal:    new Date().toISOString(),
+  };
+
+  tasks[id] = updated;
+  closeRecurRepeatModal();
+  persistLocalState();
+  renderAllLocal();
+
+  if (currentUser?.uid) {
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid, 'tasks', id), {
+        startDate:         updated.startDate,
+        deadline:          updated.deadline,
+        recurrenceEndDate: updated.recurrenceEndDate,
+        startTime:         updated.startTime,
+        endTime:           updated.endTime,
+        recurrence:        updated.recurrence,
+        hourlyInterval:    updated.hourlyInterval,
+        customType:        updated.customType,
+        customInterval:    updated.customInterval,
+        customUnit:        updated.customUnit,
+        customNth:         updated.customNth,
+        weeklyWeekdays:    updated.weeklyWeekdays,
+        customWeekdays:    updated.customWeekdays,
+        intervalWeekdays:  updated.intervalWeekdays,
+        skippedDates:      [],
+        completed:         false,
+        completedAt:       null,
+        recurrenceHistory: history,
+        updatedAt:         serverTimestamp()
+      }, { merge: true });
+    } catch (e) { showSaveError('Repeat series', e); }
+  }
 };
 
 window.setTaskFilter = (f) => {
@@ -3578,6 +3998,29 @@ window.openTaskModal = (id = null) => {
   if (deleteBtn) deleteBtn.classList.toggle('hidden', !id);
   const notesEl = document.getElementById('task-notes');
   if (notesEl) notesEl.value = '';
+
+  // Handle repeat-series button visibility inside modal
+  let repeatBtn = document.getElementById('task-modal-repeat');
+  if (!repeatBtn) {
+    repeatBtn = document.createElement('button');
+    repeatBtn.type = 'button';
+    repeatBtn.id   = 'task-modal-repeat';
+    repeatBtn.className = 'btn-repeat-series hidden';
+    repeatBtn.style.marginTop = '8px';
+    repeatBtn.textContent = '🔁 REPEAT THIS SERIES';
+    repeatBtn.onclick = () => { closeModal('task-modal'); openRecurRepeatModal(editingTaskId); };
+    deleteBtn?.parentNode?.insertBefore(repeatBtn, deleteBtn);
+  }
+
+  // History info line
+  let historyLine = document.getElementById('task-modal-history-note');
+  if (!historyLine) {
+    historyLine = document.createElement('div');
+    historyLine.id = 'task-modal-history-note';
+    historyLine.className = 'recur-history-note hidden';
+    repeatBtn.parentNode.insertBefore(historyLine, repeatBtn.nextSibling);
+  }
+
   if (id && tasks[id]) {
     const t = tasks[id];
     document.getElementById('task-title').value = t.title;
@@ -3599,6 +4042,26 @@ window.openTaskModal = (id = null) => {
     setWeeklyWeekdays(t.weeklyWeekdays || []);
     updateRecurrenceFields();
     if (notesEl) notesEl.value = t.notes || '';
+
+    // Show repeat button if recurring and completed or past end date
+    const isRecurring = t.recurrence && t.recurrence !== 'none';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const isPastEnd = t.recurrenceEndDate && today > startOfDay(parseDateOnly(t.recurrenceEndDate));
+    const showRepeat = isRecurring && (t.completed || isPastEnd);
+    repeatBtn.classList.toggle('hidden', !showRepeat);
+
+    // Show history note
+    const histCount = (t.recurrenceHistory || []).length;
+    const skippedCount = (t.skippedDates || []).length;
+    if (isRecurring && (histCount > 0 || skippedCount > 0)) {
+      historyLine.classList.remove('hidden');
+      const parts = [];
+      if (histCount > 0)    parts.push(`${histCount} previous period${histCount > 1 ? 's' : ''} archived`);
+      if (skippedCount > 0) parts.push(`${skippedCount} occurrence${skippedCount > 1 ? 's' : ''} skipped`);
+      historyLine.textContent = `📦 ${parts.join(' · ')}`;
+    } else {
+      historyLine.classList.add('hidden');
+    }
   } else {
     document.getElementById('task-title').value = '';
     document.getElementById('task-role').value = '';
@@ -3616,6 +4079,8 @@ window.openTaskModal = (id = null) => {
     setIntervalWeekdays([]);
     setWeeklyWeekdays([]);
     updateRecurrenceFields();
+    repeatBtn.classList.add('hidden');
+    historyLine.classList.add('hidden');
   }
   // Initialise Drive attachments panel
   driveInitModal(id && tasks[id] ? (tasks[id].driveAttachments || []) : []);
