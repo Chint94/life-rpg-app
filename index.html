@@ -646,6 +646,32 @@ body.simple-mode .xp-pop{display:none!important;}
 .discover-source{margin-top:auto;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:900;letter-spacing:.9px;color:#6b4700;text-transform:uppercase;}
 @media (max-width:899px){.discover-list{grid-template-columns:1fr}.discover-controls{display:flex}.discover-head{flex-direction:column}.discover-refresh{width:100%;justify-content:center}.discover-title{font-size:15px}.discover-article{min-height:auto}}
 
+
+
+/* ── DEDICATED DISCOVER SECTION REWORK ── */
+.discover-page-card{margin:0 0 18px!important;}
+.discover-layout{display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start;}
+#screen-discover .discover-list{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
+#screen-discover .discover-article{min-height:auto!important;cursor:pointer;}
+#screen-discover .discover-article.active{border-color:#b87600!important;box-shadow:0 10px 24px rgba(126,83,0,.18)!important;background:linear-gradient(145deg,#fff8dc,#ffe27a)!important;}
+.discover-reader{min-height:430px;max-height:calc(100dvh - 250px);overflow:auto;background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,250,222,.76));border:1px solid rgba(126,83,0,.18);border-radius:18px;padding:18px;box-shadow:0 8px 22px rgba(126,83,0,.10);}
+.discover-reader-empty{height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#7b5b00;gap:8px;font-family:'Rajdhani',sans-serif;letter-spacing:.5px;}
+.discover-reader h2{font-family:'Cinzel',serif;color:#2b1a00;font-size:22px;line-height:1.25;margin-bottom:8px;}
+.discover-reader-meta{font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:1px;color:#8a5a00;text-transform:uppercase;font-size:12px;margin-bottom:14px;}
+.discover-reader-body{font-size:var(--discover-font-size,15px);line-height:1.72;color:#2b1a00;}
+.discover-reader-body p{margin:0 0 14px;}
+.discover-reader-body h1,.discover-reader-body h2,.discover-reader-body h3{margin:18px 0 10px;color:#2b1a00;line-height:1.25;}
+.discover-reader-body img{max-width:100%;border-radius:14px;margin:10px 0;}
+.discover-reader-body a{color:#7a4d00;font-weight:800;}
+.discover-open-link{display:inline-flex;margin-top:14px;border-radius:999px;padding:9px 14px;text-decoration:none;background:linear-gradient(135deg,#ffd84a,#b87600);color:#201100!important;font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:.8px;}
+@media (max-width:899px){
+  .discover-layout{grid-template-columns:1fr;}
+  .discover-reader{max-height:none;min-height:320px;}
+  .discover-controls{display:flex!important;}
+  #bottom-nav{overflow-x:auto;}
+  .nav-item{min-width:58px;}
+}
+
 </style>
 </head>
 <body>
@@ -726,25 +752,6 @@ body.simple-mode .xp-pop{display:none!important;}
           </div>
           <div class="role-distribution" id="role-distribution"></div>
         </div>
-
-        <!-- Discover: The Daily Brief by Zerodha -->
-        <div class="discover-card" id="discover-card">
-          <div class="discover-head">
-            <div>
-              <div class="discover-kicker">DISCOVER</div>
-              <h3>The Daily Brief by Zerodha</h3>
-              <p>Latest market explainers and business stories</p>
-            </div>
-            <button class="btn-add discover-refresh" onclick="refreshDiscoverArticles()">↻ Refresh</button>
-          </div>
-          <div class="discover-controls">
-            <label for="discover-font-slider">Mobile text size</label>
-            <input type="range" id="discover-font-slider" min="12" max="20" value="14" oninput="setDiscoverFontSize(this.value)">
-          </div>
-          <div id="discover-status" class="discover-status">Press Refresh to load the latest articles.</div>
-          <div class="discover-list" id="discover-list"></div>
-        </div>
-
 
         <!-- Pending / Overdue Status Cards -->
         <div class="status-grid" id="dashboard-status-grid">
@@ -845,6 +852,38 @@ body.simple-mode .xp-pop{display:none!important;}
           </div>
         </div>
       <div id="roles-list"></div>
+    </div>
+
+
+    <!-- DISCOVER -->
+    <div class="screen" id="screen-discover">
+      <div class="section-hdr" style="margin-top:16px;">
+        <span class="section-title">DISCOVER</span>
+        <button class="btn-add discover-refresh" onclick="refreshDiscoverArticles(true)">↻ REFRESH</button>
+      </div>
+      <div class="discover-card discover-page-card" id="discover-card">
+        <div class="discover-head">
+          <div>
+            <div class="discover-kicker">THE DAILY BRIEF BY ZERODHA</div>
+            <h3>Latest 3 Substack Briefings</h3>
+            <p>Refresh to pull the newest stories, then open any article to read it inside Command Centre.</p>
+          </div>
+        </div>
+        <div class="discover-controls">
+          <label for="discover-font-slider">Mobile reader text size</label>
+          <input type="range" id="discover-font-slider" min="12" max="22" value="15" oninput="setDiscoverFontSize(this.value)">
+        </div>
+        <div id="discover-status" class="discover-status">Press Refresh to load the latest Substack articles.</div>
+        <div class="discover-layout">
+          <div class="discover-list" id="discover-list"></div>
+          <article class="discover-reader" id="discover-reader">
+            <div class="discover-reader-empty">
+              <strong>Select an article</strong>
+              <span>The full article will appear here when available from the Substack feed.</span>
+            </div>
+          </article>
+        </div>
+      </div>
     </div>
 
     <!-- TASKS -->
@@ -1018,6 +1057,10 @@ body.simple-mode .xp-pop{display:none!important;}
     <div class="nav-item" data-screen="roles" onclick="switchScreen('roles',this)">
       <span class="nav-icon">◎</span>
       <span class="nav-label">Roles</span>
+    </div>
+    <div class="nav-item" data-screen="discover" onclick="switchScreen('discover',this)">
+      <span class="nav-icon">◆</span>
+      <span class="nav-label">Discover</span>
     </div>
     <div class="nav-item" data-screen="settings" onclick="switchScreen('settings',this)">
       <span class="nav-icon">⚙</span>
@@ -1445,10 +1488,11 @@ window.switchScreen = (name, navEl) => {
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
   document.getElementById('main-content').scrollTop = 0;
-  const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', settings: '⚙ SETTINGS & GUIDE' };
+  const titles = { dashboard: '⌂ HEADQUARTERS', tasks: '✓ TASK MANAGEMENT', timeline: '◷ DAILY TIMELINE', journal: '✎ REFLECTION JOURNAL', roles: '◎ ROLES & RESPONSIBILITIES', discover: '◆ DISCOVER', settings: '⚙ SETTINGS & GUIDE' };
   document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
   if (name === 'tasks') renderTasks();
+  if (name === 'discover') initDiscoverSection(true);
 };
 
 
@@ -2709,12 +2753,32 @@ function renderJournalEntries() {
 // DISCOVER - THE DAILY BRIEF BY ZERODHA
 // ─────────────────────────────────────────────
 const DAILY_BRIEF_FEED = 'https://thedailybrief.zerodha.com/feed';
+const DAILY_BRIEF_SUBSTACK_FEED = 'https://thedailybrief.zerodha.com/feed';
 const DAILY_BRIEF_HOME = 'https://thedailybrief.zerodha.com/';
+let discoverArticlesCache = [];
+let discoverInitialized = false;
 
 function stripHtml(value) {
   const div = document.createElement('div');
   div.innerHTML = value || '';
   return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+function cleanArticleHtml(value) {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = value || '';
+  wrapper.querySelectorAll('script, style, iframe, form, button, input, noscript').forEach(el => el.remove());
+  wrapper.querySelectorAll('*').forEach(el => {
+    [...el.attributes].forEach(attr => {
+      const n = attr.name.toLowerCase();
+      if (n.startsWith('on') || n === 'style') el.removeAttribute(attr.name);
+    });
+    if (el.tagName === 'A') {
+      el.setAttribute('target', '_blank');
+      el.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+  return wrapper.innerHTML || '<p>Full article text was not included in the feed. Use the article link below to open it.</p>';
 }
 
 function formatDiscoverDate(value) {
@@ -2728,32 +2792,68 @@ function setDiscoverStatus(message) {
   if (el) el.textContent = message || '';
 }
 
-function renderDiscoverArticles(items) {
-  const list = document.getElementById('discover-list');
-  if (!list) return;
-  if (!items || !items.length) {
-    list.innerHTML = `<div class="hq-list-note">No articles loaded yet. Tap Refresh.</div>`;
-    return;
+function getNodeContent(node, names) {
+  for (const name of names) {
+    const found = node.getElementsByTagName(name)[0] || node.querySelector(name);
+    if (found && found.textContent) return found.textContent;
   }
-  list.innerHTML = items.slice(0, 3).map(item => {
-    const title = escHtml(item.title || 'Untitled article');
-    const link = item.link || DAILY_BRIEF_HOME;
-    const date = escHtml(formatDiscoverDate(item.pubDate));
-    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 260));
-    return `<a class="discover-article" href="${escHtml(link)}" target="_blank" rel="noopener noreferrer">
-      <div class="discover-date">${date}</div>
-      <div class="discover-title">${title}</div>
-      <div class="discover-excerpt">${excerpt || 'Open the article to read the latest Daily Brief story.'}</div>
-      <div class="discover-source">Read on The Daily Brief →</div>
-    </a>`;
-  }).join('');
+  return '';
 }
 
+function renderDiscoverArticles(items) {
+  discoverArticlesCache = (items || []).slice(0, 3);
+  const list = document.getElementById('discover-list');
+  if (!list) return;
+  if (!discoverArticlesCache.length) {
+    list.innerHTML = `<div class="hq-list-note">No articles loaded yet. Tap Refresh.</div>`;
+    renderDiscoverReader(null);
+    return;
+  }
+  list.innerHTML = discoverArticlesCache.map((item, index) => {
+    const title = escHtml(item.title || 'Untitled article');
+    const date = escHtml(formatDiscoverDate(item.pubDate));
+    const excerpt = escHtml(stripHtml(item.description || item.content || '').slice(0, 220));
+    return `<div class="discover-article ${index === 0 ? 'active' : ''}" role="button" tabindex="0" onclick="openDiscoverArticle(${index})" onkeydown="if(event.key==='Enter'){openDiscoverArticle(${index})}">
+      <div class="discover-date">${date}</div>
+      <div class="discover-title">${title}</div>
+      <div class="discover-excerpt">${excerpt || 'Tap to read this Daily Brief article inside Command Centre.'}</div>
+      <div class="discover-source">Tap to read inside →</div>
+    </div>`;
+  }).join('');
+  renderDiscoverReader(discoverArticlesCache[0]);
+}
+
+function renderDiscoverReader(item) {
+  const reader = document.getElementById('discover-reader');
+  if (!reader) return;
+  if (!item) {
+    reader.innerHTML = `<div class="discover-reader-empty"><strong>Select an article</strong><span>The full article will appear here when available from the Substack feed.</span></div>`;
+    return;
+  }
+  const title = escHtml(item.title || 'Untitled article');
+  const date = escHtml(formatDiscoverDate(item.pubDate));
+  const link = escHtml(item.link || DAILY_BRIEF_HOME);
+  const body = cleanArticleHtml(item.content || item.description || '');
+  reader.innerHTML = `<h2>${title}</h2>
+    <div class="discover-reader-meta">The Daily Brief by Zerodha • ${date}</div>
+    <div class="discover-reader-body">${body}</div>
+    <a class="discover-open-link" href="${link}" target="_blank" rel="noopener noreferrer">Open original article</a>`;
+}
+
+window.openDiscoverArticle = (index) => {
+  document.querySelectorAll('#discover-list .discover-article').forEach((el, i) => el.classList.toggle('active', i === index));
+  renderDiscoverReader(discoverArticlesCache[index]);
+};
+
 async function fetchDiscoverFeed() {
-  const direct = DAILY_BRIEF_FEED;
-  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(DAILY_BRIEF_FEED)}`;
+  const direct = DAILY_BRIEF_SUBSTACK_FEED;
+  const proxies = [
+    direct,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(direct)}`,
+    `https://corsproxy.io/?${encodeURIComponent(direct)}`
+  ];
   let lastErr;
-  for (const url of [direct, proxy]) {
+  for (const url of proxies) {
     try {
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -2765,8 +2865,8 @@ async function fetchDiscoverFeed() {
   throw lastErr || new Error('Could not load feed');
 }
 
-window.refreshDiscoverArticles = async () => {
-  setDiscoverStatus('Loading latest articles...');
+window.refreshDiscoverArticles = async (manual = false) => {
+  setDiscoverStatus('Loading latest Substack articles...');
   try {
     const xmlText = await fetchDiscoverFeed();
     const docXml = new DOMParser().parseFromString(xmlText, 'application/xml');
@@ -2774,28 +2874,33 @@ window.refreshDiscoverArticles = async () => {
       title: node.querySelector('title')?.textContent?.trim() || '',
       link: node.querySelector('link')?.getAttribute('href') || node.querySelector('link')?.textContent?.trim() || '',
       pubDate: node.querySelector('pubDate, published, updated')?.textContent?.trim() || '',
-      description: node.querySelector('description, summary, content')?.textContent || ''
+      description: getNodeContent(node, ['description', 'summary']),
+      content: getNodeContent(node, ['content:encoded', 'encoded', 'content'])
     }));
     renderDiscoverArticles(entries);
-    setDiscoverStatus(entries.length ? 'Latest 3 articles loaded.' : 'No recent articles found in the feed.');
+    setDiscoverStatus(entries.length ? 'Latest 3 articles loaded from The Daily Brief Substack feed.' : 'No recent articles found in the feed.');
   } catch (e) {
     renderDiscoverArticles([]);
-    setDiscoverStatus('Unable to refresh automatically. Open The Daily Brief website from any article card or try again later.');
+    setDiscoverStatus('Unable to refresh automatically. This can happen if Substack blocks browser access or a CORS proxy is unavailable. Try again or open the original website.');
   }
 };
 
 window.setDiscoverFontSize = (value) => {
-  const size = Math.max(12, Math.min(20, Number(value) || 14));
+  const size = Math.max(12, Math.min(22, Number(value) || 15));
   document.documentElement.style.setProperty('--discover-font-size', `${size}px`);
   localStorage.setItem('cc_discover_font_size', String(size));
 };
 
-function initDiscoverSection() {
-  const saved = localStorage.getItem('cc_discover_font_size') || '14';
+function initDiscoverSection(loadIfEmpty = false) {
+  const saved = localStorage.getItem('cc_discover_font_size') || '15';
   const slider = document.getElementById('discover-font-slider');
   if (slider) slider.value = saved;
   setDiscoverFontSize(saved);
-  renderDiscoverArticles([]);
+  if (!discoverInitialized) {
+    renderDiscoverArticles([]);
+    discoverInitialized = true;
+  }
+  if (loadIfEmpty && !discoverArticlesCache.length) refreshDiscoverArticles(false);
 }
 
 initDiscoverSection();
