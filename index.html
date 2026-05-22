@@ -4253,6 +4253,7 @@ const ALL_SCOPES      = DRIVE_SCOPES + ' ' + GCAL_SCOPE;
 const DRIVE_FOLDER_NAME = 'Command Centre Attachments';
 
 let driveAccessToken   = null;
+let driveTokenExpiry   = 0;      // epoch ms when current token expires
 let driveFolderId      = null;
 let driveTokenClient   = null;
 let driveGisLoaded     = false;
@@ -4289,7 +4290,10 @@ function driveInitTokenClient() {
     callback: async (resp) => {
       if (resp.error) { driveShowStatus('Google sign-in failed: ' + resp.error); return; }
       driveAccessToken = resp.access_token;
-      localStorage.setItem('cc_drive_token', resp.access_token);
+      // Google OAuth tokens last 3600 s; store expiry with a 5-min safety margin
+      driveTokenExpiry = Date.now() + ((resp.expires_in || 3600) - 300) * 1000;
+      localStorage.setItem('cc_drive_token',        resp.access_token);
+      localStorage.setItem('cc_drive_token_expiry', driveTokenExpiry);
       await driveEnsureFolder();
       driveShowConnectedUI();
     }
@@ -4449,12 +4453,48 @@ window.driveRemoveFile = async (index) => {
   }
 };
 
+// ── Silently obtain a fresh token, returning true on success ─────────────────
+function driveRefreshToken() {
+  return new Promise((resolve) => {
+    // If GIS isn't loaded yet we can't refresh — caller should prompt re-connect
+    if (!window.google?.accounts?.oauth2 || !driveTokenClient) {
+      resolve(false);
+      return;
+    }
+    // Temporarily override the token client callback just for this refresh
+    const originalCallback = driveTokenClient.callback;
+    driveTokenClient.callback = async (resp) => {
+      driveTokenClient.callback = originalCallback; // restore
+      if (resp.error || !resp.access_token) { resolve(false); return; }
+      driveAccessToken = resp.access_token;
+      driveTokenExpiry = Date.now() + ((resp.expires_in || 3600) - 300) * 1000;
+      localStorage.setItem('cc_drive_token',        resp.access_token);
+      localStorage.setItem('cc_drive_token_expiry', driveTokenExpiry);
+      driveFolderId = null; // force folder re-lookup with new token
+      resolve(true);
+    };
+    // prompt:'' = silent refresh (no popup if user already consented)
+    driveTokenClient.requestAccessToken({ prompt: '' });
+  });
+}
+
+// ── Check if token is known to be expired before even making a request ───────
+async function driveEnsureFreshToken() {
+  if (!driveAccessToken) return false;
+  if (driveTokenExpiry > 0 && Date.now() > driveTokenExpiry) {
+    // Token is definitely expired — refresh silently now
+    return await driveRefreshToken();
+  }
+  return true; // token looks valid; an actual 401 will still trigger a retry
+}
+
 async function driveUploadFile(file) {
   const idx = taskDriveAttachments.length;
   taskDriveAttachments.push({ name: file.name, file, status: 'uploading', driveFileId: null, driveUrl: null });
   renderDriveFileList();
 
-  try {
+  // Inner function so we can retry once after a token refresh
+  async function attemptUpload() {
     await driveEnsureFolder();
 
     // ── Step 1: Initiate a resumable upload session ──────────────────────────
@@ -4477,6 +4517,13 @@ async function driveUploadFile(file) {
       }
     );
 
+    if (initRes.status === 401) {
+      // Signal caller to refresh and retry
+      const err = new Error('TOKEN_EXPIRED');
+      err.status = 401;
+      throw err;
+    }
+
     if (!initRes.ok) {
       const errText = await initRes.text().catch(() => initRes.status);
       throw new Error(`Upload init failed (${initRes.status}): ${errText}`);
@@ -4487,9 +4534,6 @@ async function driveUploadFile(file) {
     if (!uploadUrl) throw new Error('Drive did not return an upload session URL.');
 
     // ── Step 2: Upload the file bytes in a single PUT ────────────────────────
-    // For very large files this could be chunked, but a single PUT works for
-    // any file the browser can read into memory (Drive's resumable API accepts
-    // the full body in one shot with no upper size limit on our end).
     const fileBuffer = await file.arrayBuffer();
 
     const uploadRes = await fetch(uploadUrl, {
@@ -4507,7 +4551,36 @@ async function driveUploadFile(file) {
     }
 
     // Drive returns 200 or 201 with the file resource when complete.
-    const data = await uploadRes.json();
+    return await uploadRes.json();
+  }
+
+  try {
+    // Pre-flight: refresh token if we already know it's expired
+    await driveEnsureFreshToken();
+
+    let data;
+    try {
+      data = await attemptUpload();
+    } catch (e) {
+      // 401 → token expired mid-session; try a silent refresh and retry once
+      if (e.status === 401 || e.message === 'TOKEN_EXPIRED') {
+        const refreshed = await driveRefreshToken();
+        if (!refreshed) {
+          // Silent refresh failed — token fully invalid, need manual re-connect
+          driveAccessToken = null;
+          driveTokenExpiry = 0;
+          localStorage.removeItem('cc_drive_token');
+          localStorage.removeItem('cc_drive_token_expiry');
+          driveShowDisconnectedUI();
+          throw new Error('Google Drive session expired. Please click "Connect Google Drive" to reconnect, then try again.');
+        }
+        driveFolderId = null; // ensure folder is re-fetched with new token
+        data = await attemptUpload(); // retry once with fresh token
+      } else {
+        throw e; // non-auth error — propagate as-is
+      }
+    }
+
     taskDriveAttachments[idx].status      = 'done';
     taskDriveAttachments[idx].driveFileId = data.id;
     taskDriveAttachments[idx].driveUrl    = data.webViewLink;
@@ -4563,12 +4636,19 @@ function driveInitModal(existingAttachments = []) {
     return;
   }
 
-  // Restore token from localStorage if valid
-  const saved = localStorage.getItem('cc_drive_token');
-  if (saved) {
+  // Restore token from localStorage only if it hasn't expired yet
+  const saved       = localStorage.getItem('cc_drive_token');
+  const savedExpiry = Number(localStorage.getItem('cc_drive_token_expiry') || 0);
+  if (saved && savedExpiry > Date.now()) {
     driveAccessToken = saved;
+    driveTokenExpiry = savedExpiry;
     driveShowConnectedUI();
   } else {
+    // Token missing or expired — clear it so the user gets a clean Connect button
+    localStorage.removeItem('cc_drive_token');
+    localStorage.removeItem('cc_drive_token_expiry');
+    driveAccessToken = null;
+    driveTokenExpiry = 0;
     driveShowDisconnectedUI();
   }
   setTimeout(() => { if (window.google?.accounts?.oauth2) driveInitTokenClient(); }, 500);
@@ -4661,8 +4741,11 @@ function gcalInitTokenClient(forceConsent, callback) {
       // Store under a separate key so it doesn't overwrite the drive-only token
       gcalAccessToken  = resp.access_token;
       driveAccessToken = resp.access_token;
-      localStorage.setItem('cc_gcal_token',  resp.access_token);
-      localStorage.setItem('cc_drive_token', resp.access_token);
+      const expiry = Date.now() + ((resp.expires_in || 3600) - 300) * 1000;
+      driveTokenExpiry = expiry;
+      localStorage.setItem('cc_gcal_token',           resp.access_token);
+      localStorage.setItem('cc_drive_token',          resp.access_token);
+      localStorage.setItem('cc_drive_token_expiry',   expiry);
       gcalMarkConnected();
       gcalSetStatus('Connected! Select a date range and tap Pull Events.', 'ok');
       if (typeof callback === 'function') callback();
