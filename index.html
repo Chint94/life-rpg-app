@@ -2429,6 +2429,17 @@ body.simple-mode .xp-pop{display:none!important;}
             <option value="weeks">Week(s)</option>
           </select>
         </div>
+        <label class="form-label" style="margin-top:10px;">Only on these days (optional)</label>
+        <div class="form-help-text" style="margin-bottom:6px;">Leave all unselected to repeat every N days/weeks regardless of day.</div>
+        <div class="weekday-picker" id="task-interval-weekdays">
+          <label class="weekday-chip"><input type="checkbox" value="1">Mon</label>
+          <label class="weekday-chip"><input type="checkbox" value="2">Tue</label>
+          <label class="weekday-chip"><input type="checkbox" value="3">Wed</label>
+          <label class="weekday-chip"><input type="checkbox" value="4">Thu</label>
+          <label class="weekday-chip"><input type="checkbox" value="5">Fri</label>
+          <label class="weekday-chip"><input type="checkbox" value="6">Sat</label>
+          <label class="weekday-chip"><input type="checkbox" value="0">Sun</label>
+        </div>
       </div>
 
       <!-- Nth day of month -->
@@ -2910,7 +2921,9 @@ function recurrenceLabel(t) {
       const days = (t.customWeekdays || []).map(d => dayNames[Number(d)]).filter(Boolean).join(', ');
       return days ? `Custom · ${days}` : 'Custom weekdays';
     }
-    return `Every ${t.customInterval || 1} ${t.customUnit || 'days'}`;
+    const intervalDays = (t.intervalWeekdays || []).map(d => dayNames[Number(d)]).filter(Boolean).join(', ');
+    const intervalBase = `Every ${t.customInterval || 1} ${t.customUnit || 'days'}`;
+    return intervalDays ? `${intervalBase} · ${intervalDays}` : intervalBase;
   }
   return t.recurrence.charAt(0).toUpperCase() + t.recurrence.slice(1);
 }
@@ -2961,7 +2974,11 @@ function isTaskForDate(t, date) {
     // default: interval
     const interval = Math.max(1, Number(t.customInterval || 1));
     const unitDays = t.customUnit === 'weeks' ? 7 : 1;
-    return diffDays % (interval * unitDays) === 0;
+    const intervalMatch = diffDays % (interval * unitDays) === 0;
+    if (!intervalMatch) return false;
+    const intervalWeekdays = (t.intervalWeekdays || []).map(Number);
+    if (intervalWeekdays.length > 0) return intervalWeekdays.includes(target.getDay());
+    return true;
   }
   if (!t.deadline) return true;
   return baseDay.getTime() === target.getTime();
@@ -3578,6 +3595,7 @@ window.openTaskModal = (id = null) => {
     document.getElementById('task-custom-unit').value     = t.customUnit     || 'days';
     document.getElementById('task-custom-nth').value      = t.customNth      || '1';
     setCustomWeekdays(t.customWeekdays || []);
+    setIntervalWeekdays(t.intervalWeekdays || []);
     setWeeklyWeekdays(t.weeklyWeekdays || []);
     updateRecurrenceFields();
     if (notesEl) notesEl.value = t.notes || '';
@@ -3595,6 +3613,7 @@ window.openTaskModal = (id = null) => {
     document.getElementById('task-custom-interval').value = '1';
     document.getElementById('task-custom-unit').value = 'days';
     setCustomWeekdays([]);
+    setIntervalWeekdays([]);
     setWeeklyWeekdays([]);
     updateRecurrenceFields();
   }
@@ -3618,6 +3637,13 @@ window.addStepInput = (val = '') => {
 };
 
 
+function getIntervalWeekdays() {
+  return [...document.querySelectorAll('#task-interval-weekdays input:checked')].map(i => Number(i.value));
+}
+function setIntervalWeekdays(days = []) {
+  const values = new Set(days.map(Number));
+  document.querySelectorAll('#task-interval-weekdays input').forEach(input => { input.checked = values.has(Number(input.value)); });
+}
 function getCustomWeekdays() {
   return [...document.querySelectorAll('#task-custom-weekdays input:checked')].map(i => Number(i.value));
 }
@@ -3687,6 +3713,7 @@ window.saveTask = async () => {
       customNth: Number(document.getElementById('task-custom-nth')?.value || 1),
       weeklyWeekdays: recurrence === 'weekly' ? getWeeklyWeekdays() : [],
       customWeekdays: recurrence === 'custom' && document.getElementById('task-custom-type')?.value === 'weekdays' ? getCustomWeekdays() : [],
+      intervalWeekdays: recurrence === 'custom' && document.getElementById('task-custom-type')?.value === 'interval' ? getIntervalWeekdays() : [],
       notes,
       steps: [],
       completed: tasks[taskId]?.completed || false,
@@ -3721,6 +3748,7 @@ window.saveTask = async () => {
           customNth: localData.customNth,
           weeklyWeekdays: localData.weeklyWeekdays,
           customWeekdays: localData.customWeekdays,
+          intervalWeekdays: localData.intervalWeekdays,
           notes: localData.notes,
           steps: [],
           completed: localData.completed,
@@ -4796,7 +4824,7 @@ window.gcalSync = async () => {
         customUnit:     'days',
         weeklyWeekdays: [],
         customWeekdays: [],
-        notes:          ev.description || '',
+        intervalWeekdays: [],
         steps:          [],
         completed:      false,
         completedAt:    null,
