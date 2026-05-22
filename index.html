@@ -232,6 +232,7 @@ body{font-family:'Exo 2',sans-serif;color:var(--text-main);overscroll-behavior:n
 .entry-tag{font-size:10px;background:var(--bg-card2);border:1px solid var(--border);border-radius:20px;padding:2px 10px;color:var(--text-dim);font-family:'Rajdhani',sans-serif;font-weight:600;}
 
 /* ── MODALS ── */
+#role-modal.role-from-task{z-index:750;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%);width:100%;opacity:0;pointer-events:none;transition:opacity .25s;}
 .modal-overlay.open{opacity:1;pointer-events:all;}
 .modal-sheet{background:var(--bg-card);border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
@@ -312,21 +313,21 @@ body{background:
 .slot-task{box-shadow:0 2px 12px rgba(0,0,0,.25);}
 .slot-task .slot-time{display:block;font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--gold);letter-spacing:.7px;margin-bottom:2px;}
 .slot-task.completed-slot{opacity:.55;}
-body.simple-mode .gamified,
 body.simple-mode .xp-badge,
-body.simple-mode #hero-banner,
-body.simple-mode .stats-grid,
-body.simple-mode #streak-banner,
-body.simple-mode .role-badge,
-body.simple-mode #bottom-nav .nav-item[data-screen="roles"],
-body.simple-mode #bottom-nav .nav-item[data-screen="timeline"],
-body.simple-mode #bottom-nav .nav-item[data-screen="journal"],
-body.simple-mode #screen-roles,
-body.simple-mode #screen-journal,
-body.simple-mode .focus-timer-card,
-body.simple-mode .xp-reward-group{display:none!important;}
+body.simple-mode .xp-section,
+body.simple-mode .xp-bar-wrap,
+body.simple-mode .xp-reward-group,
+body.simple-mode .role-level-badge,
+body.simple-mode .role-xp-row{display:none!important;}
 body.simple-mode #screen-dashboard .section-title::after{content:" — Simple Mode";color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:12px;margin-left:6px;}
-body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
+body.simple-mode .task-card{border-color:rgba(245,200,66,.25);} 
+.role-task-actions{display:flex;gap:8px;margin-top:8px;}
+.role-task-actions .btn-add-step{margin-top:0;}
+.weekday-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+.weekday-chip{display:flex;align-items:center;justify-content:center;min-height:34px;border:1px solid var(--border);border-radius:10px;background:var(--bg-input);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text-dim);cursor:pointer;letter-spacing:.6px;}
+.weekday-chip input{display:none;}
+.weekday-chip:has(input:checked){border-color:var(--gold);background:rgba(245,200,66,.14);color:var(--gold);box-shadow:0 0 12px rgba(245,200,66,.12);}
+
 @media (min-width: 900px){
   #app{max-width:1180px;width:calc(100vw - 48px);height:calc(100dvh - 32px);margin:16px auto;border:1px solid rgba(245,200,66,.25);border-radius:28px;overflow:hidden;display:grid;grid-template-columns:230px 1fr;grid-template-rows:72px 1fr;background:rgba(13,15,26,.94);}
   #top-header{grid-column:2;grid-row:1;padding:18px 28px;border-bottom:1px solid var(--border);position:relative;}
@@ -461,7 +462,7 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
 
         <!-- Today's Tasks -->
         <div class="section-hdr">
-          <span class="section-title">TODAY'S QUESTS</span>
+          <span class="section-title">TODAY'S TASKS</span>
           <button class="btn-add" onclick="openTaskModal()">+ ADD</button>
         </div>
         <div id="today-tasks-list"></div>
@@ -480,7 +481,7 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
     <!-- TASKS -->
     <div class="screen" id="screen-tasks">
       <div class="section-hdr" style="margin-top:16px;">
-        <span class="section-title">ALL QUESTS</span>
+        <span class="section-title">ALL TASKS</span>
         <button class="btn-add" onclick="openTaskModal()">+ ADD</button>
       </div>
       <div class="filter-row" id="task-filter-row">
@@ -573,11 +574,11 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
     </div>
     <div class="nav-item" data-screen="tasks" onclick="switchScreen('tasks',this)">
       <span class="nav-icon">⚔️</span>
-      <span class="nav-label">Quests</span>
+      <span class="nav-label">Tasks</span>
     </div>
     <div class="nav-item" data-screen="timeline" onclick="switchScreen('timeline',this)">
       <span class="nav-icon">⏱️</span>
-      <span class="nav-label">Focus</span>
+      <span class="nav-label">Timeline</span>
     </div>
     <div class="nav-item" data-screen="journal" onclick="switchScreen('journal',this)">
       <span class="nav-icon">📓</span>
@@ -644,9 +645,9 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
 <div class="modal-overlay" id="task-modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="task-modal-title">NEW QUEST</div>
+    <div class="modal-title" id="task-modal-title">NEW TASK</div>
     <div class="form-group">
-      <label class="form-label">Quest Name</label>
+      <label class="form-label">Task Name</label>
       <input class="form-input" id="task-title" placeholder="What needs to be done?"/>
     </div>
     <div class="form-group">
@@ -654,6 +655,10 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
       <select class="form-select" id="task-role">
         <option value="">No Role</option>
       </select>
+      <div class="role-task-actions">
+        <button type="button" class="btn-add-step" onclick="openRoleModalFromTask()">+ ADD NEW ROLE</button>
+        <button type="button" class="btn-add-step" onclick="editSelectedRoleFromTask()">✏️ EDIT SELECTED ROLE</button>
+      </div>
     </div>
     <div class="form-group xp-reward-group gamified">
       <label class="form-label">XP Reward</label>
@@ -672,14 +677,14 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Deadline (optional)</label>
-      <input class="form-input" type="date" id="task-deadline"/>
+      <label class="form-label">Start Date</label>
+      <input class="form-input" type="date" id="task-deadline" aria-label="Task start date"/>
     </div>
     <div class="form-group">
-      <label class="form-label">Quest Time</label>
+      <label class="form-label">Task Time</label>
       <div class="time-row">
-        <input class="form-input" type="time" id="task-start-time" aria-label="Quest start time"/>
-        <input class="form-input" type="time" id="task-end-time" aria-label="Quest end time"/>
+        <input class="form-input" type="time" id="task-start-time" aria-label="Task start time"/>
+        <input class="form-input" type="time" id="task-end-time" aria-label="Task end time"/>
       </div>
     </div>
     <div class="form-group">
@@ -716,8 +721,18 @@ body.simple-mode .task-card{border-color:rgba(245,200,66,.25);}
           <option value="weeks">Week(s)</option>
         </select>
       </div>
+      <label class="form-label" style="margin-top:12px;">Repeat on selected weekdays</label>
+      <div class="weekday-picker" id="task-custom-weekdays">
+        <label class="weekday-chip"><input type="checkbox" value="1">Mon</label>
+        <label class="weekday-chip"><input type="checkbox" value="2">Tue</label>
+        <label class="weekday-chip"><input type="checkbox" value="3">Wed</label>
+        <label class="weekday-chip"><input type="checkbox" value="4">Thu</label>
+        <label class="weekday-chip"><input type="checkbox" value="5">Fri</label>
+        <label class="weekday-chip"><input type="checkbox" value="6">Sat</label>
+        <label class="weekday-chip"><input type="checkbox" value="0">Sun</label>
+      </div>
     </div>
-    <button class="btn-modal-save" onclick="saveTask()">⚔️ FORGE THIS QUEST</button>
+    <button class="btn-modal-save" onclick="saveTask()">SAVE TASK</button>
     <button class="btn-modal-cancel" onclick="closeModal('task-modal')">CANCEL</button>
   </div>
 </div>
@@ -753,6 +768,8 @@ let journals = {};
 let taskFilter = 'all';
 let editingRoleId = null;
 let editingTaskId = null;
+let roleReturnToTask = false;
+let pendingSelectRoleId = null;
 let selectedRoleEmoji = '⚔️';
 let selectedRoleColor = '#8b5cf6';
 let xpValue = 10;
@@ -902,15 +919,14 @@ async function updateStreak() {
 // NAVIGATION
 // ─────────────────────────────────────────────
 window.switchScreen = (name, navEl) => {
-  if (userData.simpleMode && !['dashboard','tasks'].includes(name)) name = 'tasks';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(`screen-${name}`).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const activeNav = navEl && navEl.dataset?.screen === name ? navEl : document.querySelector(`.nav-item[data-screen="${name}"]`);
   if (activeNav) activeNav.classList.add('active');
   document.getElementById('main-content').scrollTop = 0;
-  const titles = { dashboard: '⚔️ DASHBOARD', roles: '🎭 LIFE ROLES', tasks: '⚔️ QUESTS', timeline: '⏱️ FOCUS', journal: '📓 JOURNAL' };
-  document.getElementById('screen-title').textContent = userData.simpleMode && name === 'tasks' ? '✅ TASKS' : (titles[name] || '');
+  const titles = { dashboard: '⚔️ DASHBOARD', roles: '🎭 LIFE ROLES', tasks: '✅ TASKS', timeline: '⏱️ TIMELINE', journal: '📓 JOURNAL' };
+  document.getElementById('screen-title').textContent = titles[name] || '';
   if (name === 'timeline') renderTimeline();
   if (name === 'tasks') renderTasks();
 };
@@ -928,10 +944,6 @@ function applySimpleMode(enabled) {
   document.body.classList.toggle('simple-mode', !!enabled);
   const toggle = document.getElementById('simple-mode-toggle');
   if (toggle) toggle.checked = !!enabled;
-  const active = document.querySelector('.screen.active')?.id?.replace('screen-','');
-  if (enabled && active && !['dashboard','tasks'].includes(active)) {
-    switchScreen('tasks', document.querySelector('.nav-item[data-screen="tasks"]'));
-  }
 }
 
 
@@ -1019,12 +1031,16 @@ function formatTimeRange(t) {
 function recurrenceLabel(t) {
   if (!t.recurrence || t.recurrence === 'none') return '';
   if (t.recurrence === 'hourly') return `Hourly · every ${t.hourlyInterval || 1}h`;
-  if (t.recurrence === 'custom') return `Custom · every ${t.customInterval || 1} ${t.customUnit || 'days'}`;
+  if (t.recurrence === 'custom') {
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const days = (t.customWeekdays || []).map(d => dayNames[Number(d)]).filter(Boolean).join(', ');
+    return days ? `Custom · ${days}` : `Custom · every ${t.customInterval || 1} ${t.customUnit || 'days'}`;
+  }
   return t.recurrence.charAt(0).toUpperCase() + t.recurrence.slice(1);
 }
 function isTaskForDate(t, date) {
   const target = startOfDay(date);
-  const base = parseDateOnly(t.deadline) || parseDateOnly((t.createdAt?.toDate?.() || new Date()).toISOString?.().slice(0,10)) || target;
+  const base = parseDateOnly(t.startDate || t.deadline) || parseDateOnly((t.createdAt?.toDate?.() || new Date()).toISOString?.().slice(0,10)) || target;
   const baseDay = startOfDay(base);
   if (t.recurrence === 'daily' || t.recurrence === 'hourly') return target >= baseDay;
   if (t.recurrence === 'weekly') {
@@ -1032,10 +1048,13 @@ function isTaskForDate(t, date) {
     return diffDays >= 0 && diffDays % 7 === 0;
   }
   if (t.recurrence === 'custom') {
+    const diffDays = Math.floor((target - baseDay) / 86400000);
+    if (diffDays < 0) return false;
+    const weekdays = (t.customWeekdays || []).map(Number);
+    if (weekdays.length > 0) return weekdays.includes(target.getDay());
     const interval = Math.max(1, Number(t.customInterval || 1));
     const unitDays = t.customUnit === 'weeks' ? 7 : 1;
-    const diffDays = Math.floor((target - baseDay) / 86400000);
-    return diffDays >= 0 && diffDays % (interval * unitDays) === 0;
+    return diffDays % (interval * unitDays) === 0;
   }
   if (!t.deadline) return true;
   return baseDay.getTime() === target.getTime();
@@ -1084,7 +1103,7 @@ function renderDashboard() {
 
   const list = document.getElementById('today-tasks-list');
   if (todayTasks.length === 0) {
-    list.innerHTML = `<div class="empty-state"><span class="empty-icon">🗡️</span><p>No quests for today. Add one!</p></div>`;
+    list.innerHTML = `<div class="empty-state"><span class="empty-icon">🗡️</span><p>No tasks for today. Add one!</p></div>`;
     return;
   }
   list.innerHTML = todayTasks.map(t => buildTaskMiniHTML(t)).join('');
@@ -1183,16 +1202,37 @@ window.saveRole = async () => {
   const data = { name, desc, emoji: selectedRoleEmoji, color: selectedRoleColor };
   if (editingRoleId) {
     await updateDoc(doc(db, 'users', uid, 'roles', editingRoleId), data);
+    pendingSelectRoleId = roleReturnToTask ? editingRoleId : null;
   } else {
-    await addDoc(collection(db, 'users', uid, 'roles'), { ...data, xp: 0, level: 1, createdAt: serverTimestamp() });
+    const newRoleRef = await addDoc(collection(db, 'users', uid, 'roles'), { ...data, xp: 0, level: 1, createdAt: serverTimestamp() });
+    pendingSelectRoleId = roleReturnToTask ? newRoleRef.id : null;
   }
   closeModal('role-modal');
+  document.getElementById('role-modal')?.classList.remove('role-from-task');
+  roleReturnToTask = false;
+  setTimeout(() => {
+    if (pendingSelectRoleId && document.getElementById('task-role')) document.getElementById('task-role').value = pendingSelectRoleId;
+  }, 250);
 };
 
 window.deleteRole = async (id) => {
   if (!confirm('Delete this role? Tasks linked to it will remain.')) return;
   await deleteDoc(doc(db, 'users', currentUser.uid, 'roles', id));
 };
+window.openRoleModalFromTask = () => {
+  roleReturnToTask = true;
+  document.getElementById('role-modal')?.classList.add('role-from-task');
+  openRoleModal();
+};
+
+window.editSelectedRoleFromTask = () => {
+  const roleId = document.getElementById('task-role')?.value;
+  if (!roleId) { alert('Please select a life role to edit first, or add a new role.'); return; }
+  roleReturnToTask = true;
+  document.getElementById('role-modal')?.classList.add('role-from-task');
+  openRoleModal(roleId);
+};
+
 
 window.selectRoleEmoji = (el) => {
   document.querySelectorAll('#role-emoji-picker .emoji-opt').forEach(e => e.classList.remove('selected'));
@@ -1211,8 +1251,12 @@ window.selectRoleColor = (el) => {
 // ─────────────────────────────────────────────
 function populateRoleSelect() {
   const sel = document.getElementById('task-role');
+  if (!sel) return;
+  const previous = pendingSelectRoleId || sel.value || '';
   sel.innerHTML = '<option value="">No Role</option>' +
     Object.values(roles).map(r => `<option value="${r.id}">${r.emoji} ${escHtml(r.name)}</option>`).join('');
+  if (previous && roles[previous]) sel.value = previous;
+  if (pendingSelectRoleId && roles[pendingSelectRoleId]) pendingSelectRoleId = null;
 }
 
 function renderTasks() {
@@ -1235,7 +1279,7 @@ function renderTasks() {
   });
 
   if (arr.length === 0) {
-    list.innerHTML = `<div class="empty-state"><span class="empty-icon">⚔️</span><p>No quests here. Go forge some!</p></div>`;
+    list.innerHTML = `<div class="empty-state"><span class="empty-icon">⚔️</span><p>No tasks here. Add one!</p></div>`;
     return;
   }
   list.innerHTML = arr.map(t => buildTaskCardHTML(t)).join('');
@@ -1311,7 +1355,7 @@ window.toggleStep = async (taskId, stepIdx) => {
 };
 
 window.deleteTask = async (id) => {
-  if (!confirm('Delete this quest?')) return;
+  if (!confirm('Delete this task?')) return;
   await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id));
 };
 
@@ -1323,7 +1367,7 @@ window.setTaskFilter = (f) => {
 
 window.openTaskModal = (id = null) => {
   editingTaskId = id;
-  document.getElementById('task-modal-title').textContent = id ? 'EDIT QUEST' : 'NEW QUEST';
+  document.getElementById('task-modal-title').textContent = id ? 'EDIT TASK' : 'NEW TASK';
   document.getElementById('steps-input-list').innerHTML = '';
   if (id && tasks[id]) {
     const t = tasks[id];
@@ -1339,6 +1383,7 @@ window.openTaskModal = (id = null) => {
     document.getElementById('task-hourly-interval').value = t.hourlyInterval || '1';
     document.getElementById('task-custom-interval').value = t.customInterval || '1';
     document.getElementById('task-custom-unit').value = t.customUnit || 'days';
+    setCustomWeekdays(t.customWeekdays || []);
     updateRecurrenceFields();
     if (t.steps) t.steps.forEach(s => addStepInput(s.name));
   } else {
@@ -1354,6 +1399,7 @@ window.openTaskModal = (id = null) => {
     document.getElementById('task-hourly-interval').value = '1';
     document.getElementById('task-custom-interval').value = '1';
     document.getElementById('task-custom-unit').value = 'days';
+    setCustomWeekdays([]);
     updateRecurrenceFields();
   }
   openModal('task-modal');
@@ -1374,6 +1420,14 @@ window.addStepInput = (val = '') => {
 };
 
 
+function getCustomWeekdays() {
+  return [...document.querySelectorAll('#task-custom-weekdays input:checked')].map(i => Number(i.value));
+}
+function setCustomWeekdays(days = []) {
+  const values = new Set((days || []).map(Number));
+  document.querySelectorAll('#task-custom-weekdays input').forEach(input => { input.checked = values.has(Number(input.value)); });
+}
+
 window.updateRecurrenceFields = () => {
   const recurrence = document.getElementById('task-recurrence')?.value || 'none';
   document.getElementById('hourly-recurrence-fields')?.classList.toggle('show', recurrence === 'hourly');
@@ -1382,7 +1436,13 @@ window.updateRecurrenceFields = () => {
 
 window.saveTask = async () => {
   const title = document.getElementById('task-title').value.trim();
-  if (!title) { alert('Please enter a quest name'); return; }
+  if (!title) { alert('Please enter a task name'); return; }
+  const startTime = document.getElementById('task-start-time').value;
+  const endTime = document.getElementById('task-end-time').value;
+  if (startTime && endTime && timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+    alert('End time should be after start time.');
+    return;
+  }
   const uid = currentUser.uid;
   const steps = [...document.querySelectorAll('#steps-input-list .form-input')]
     .map(i => ({ name: i.value.trim(), done: false }))
@@ -1392,6 +1452,7 @@ window.saveTask = async () => {
     roleId: document.getElementById('task-role').value || null,
     xp: xpValue,
     priority: document.getElementById('task-priority').value,
+    startDate: document.getElementById('task-deadline').value || null,
     deadline: document.getElementById('task-deadline').value || null,
     startTime: document.getElementById('task-start-time').value || null,
     endTime: document.getElementById('task-end-time').value || null,
@@ -1399,6 +1460,7 @@ window.saveTask = async () => {
     hourlyInterval: Number(document.getElementById('task-hourly-interval').value || 1),
     customInterval: Number(document.getElementById('task-custom-interval').value || 1),
     customUnit: document.getElementById('task-custom-unit').value || 'days',
+    customWeekdays: getCustomWeekdays(),
     steps,
   };
   if (editingTaskId) {
@@ -1406,6 +1468,9 @@ window.saveTask = async () => {
   } else {
     await addDoc(collection(db, 'users', uid, 'tasks'), { ...data, completed: false, completedAt: null, createdAt: serverTimestamp() });
   }
+  renderTasks();
+  renderDashboard();
+  renderTimeline();
   closeModal('task-modal');
 };
 
@@ -1587,6 +1652,7 @@ window.openModal = (id) => {
 };
 window.closeModal = (id) => {
   document.getElementById(id).classList.remove('open');
+  if (id === 'role-modal') document.getElementById(id).classList.remove('role-from-task');
   document.body.style.overflow = '';
 };
 
