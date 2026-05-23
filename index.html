@@ -3249,15 +3249,22 @@ function toDateStr(date) {
 function isOccurrenceComplete(t, date) {
   const isRecurring = t.recurrence && t.recurrence !== 'none';
   if (!isRecurring) return !!t.completed; // non-recurring: use global flag
-  if (t.completed) return true; // series finished
+  if (t.completed) return true; // series fully finished
   const ds = toDateStr(date);
-  // Legacy path: completedDates still present
+  // Legacy path: completedDates array still present (pre-v18 data)
   if ((t.completedDates || []).includes(ds)) return true;
-  // Auto-advance path: if startDate is strictly after this date, this occurrence was completed
+  // Auto-advance path:
+  // After completion, startDate is set to the NEXT pending occurrence.
+  // - If the queried date equals startDate → this is the freshly-rolled-to
+  //   pending occurrence, so it is NOT yet complete → return false.
+  // - If startDate is strictly AFTER the queried date → the queried date was
+  //   a past occurrence that was already completed → return true.
   if (t.startDate) {
-    const taskStart = parseDateOnly(t.startDate);
+    const taskStart = startOfDay(parseDateOnly(t.startDate));
     const targetDay = startOfDay(date);
-    if (taskStart && startOfDay(taskStart) > targetDay) return true;
+    if (!taskStart) return false;
+    if (taskStart.getTime() === targetDay.getTime()) return false; // pending next occurrence
+    if (taskStart > targetDay) return true; // past occurrence, already completed
   }
   return false;
 }
