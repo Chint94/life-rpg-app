@@ -2178,6 +2178,44 @@ body.simple-mode .xp-pop{display:none!important;}
   padding: 8px; letter-spacing: 0.5px;
 }
 
+/* ── FOCUS CARD — MISSING FIELDS WARNING ── */
+.hq-focus-missing-strip {
+  background: rgba(180,35,24,0.07);
+  border: 1px solid rgba(180,35,24,0.22);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.hq-focus-missing-hdr {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 900;
+  letter-spacing: 1.4px; color: #b42318;
+  text-transform: uppercase; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 5px;
+}
+.hq-focus-missing-list {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.hq-focus-missing-pill {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(180,35,24,0.10);
+  border: 1px solid rgba(180,35,24,0.22);
+  color: #b42318;
+}
+.btn-focus-edit {
+  width: 100%;
+  background: linear-gradient(135deg,rgba(180,35,24,0.10),rgba(180,35,24,0.06));
+  border: 1px solid rgba(180,35,24,0.28);
+  border-radius: 10px; padding: 9px;
+  color: #b42318; font-family: 'Rajdhani', sans-serif;
+  font-weight: 900; font-size: 12px; letter-spacing: 1px;
+  cursor: pointer; transition: all .2s; margin-top: 8px;
+}
+.btn-focus-edit:active { transform: scale(0.98); }
+
 /* ── ROLE BALANCE ALERT ── */
 .hq-role-alert {
   border-radius: 14px; padding: 11px 14px;
@@ -4333,6 +4371,7 @@ function renderHQExtendedAnalytics() {
         if (pa !== pb) return pa - pb;
         return (timeToMinutes(a.startTime) ?? 9999) - (timeToMinutes(b.startTime) ?? 9999);
       });
+
     if (candidates.length === 0) {
       focusWrap.innerHTML = `<div class="hq-focus-card">
         <div class="hq-focus-kicker">⚡ FOCUS NOW</div>
@@ -4341,19 +4380,49 @@ function renderHQExtendedAnalytics() {
     } else {
       const ft = candidates[0];
       const role = ft.roleId && roles[ft.roleId];
-      const overdueMark = isTaskOverdue(ft) ? '<span class="hq-focus-badge" style="background:rgba(180,35,24,0.12);color:#b42318;">⚠ OVERDUE</span>' : '<span class="hq-focus-badge">📅 DUE TODAY</span>';
       const isRec = ft.recurrence && ft.recurrence !== 'none';
       const toggleCall = isRec ? `toggleTask('${ft.id}',event,'${todayStr}')` : `toggleTask('${ft.id}',event)`;
+      const overdueMark = isTaskOverdue(ft)
+        ? '<span class="hq-focus-badge" style="background:rgba(180,35,24,0.12);color:#b42318;">⚠ OVERDUE</span>'
+        : '<span class="hq-focus-badge">📅 DUE TODAY</span>';
+
+      // ── Detect missing fields ──────────────────
+      // Four fields are checked: Task Name, Life Role, Priority, Start Date.
+      // Task Name is always present (required to save), but we check for empty/blank defensively.
+      const missingFields = [];
+      if (!ft.title || !ft.title.trim())               missingFields.push({ icon: '📝', label: 'Task Name' });
+      if (!ft.roleId || !roles[ft.roleId])             missingFields.push({ icon: '🎭', label: 'Life Role' });
+      if (!ft.priority)                                missingFields.push({ icon: '🔺', label: 'Priority' });
+      if (!ft.startDate && !ft.deadline)               missingFields.push({ icon: '📅', label: 'Start Date' });
+
+      // Build the missing-fields warning strip (only shown when at least one field is missing)
+      const missingStripHTML = missingFields.length > 0 ? `
+        <div class="hq-focus-missing-strip">
+          <div class="hq-focus-missing-hdr">⚠ Incomplete Task — Missing Details</div>
+          <div class="hq-focus-missing-list">
+            ${missingFields.map(f => `<span class="hq-focus-missing-pill">${f.icon} ${f.label}</span>`).join('')}
+          </div>
+        </div>
+        <button class="btn-focus-edit" onclick="openTaskModal('${ft.id}')">✏️ FILL IN MISSING DETAILS</button>` : '';
+
       focusWrap.innerHTML = `<div class="hq-focus-card">
         <div class="hq-focus-kicker">⚡ FOCUS NOW — TOP PRIORITY</div>
-        <div class="hq-focus-title">${escHtml(ft.title)}</div>
+        <div class="hq-focus-title">${escHtml(ft.title || 'Untitled Task')}</div>
         <div class="hq-focus-meta">
           ${overdueMark}
-          ${role ? `<span class="hq-focus-badge">${role.emoji} ${escHtml(role.name)}</span>` : ''}
+          ${role ? `<span class="hq-focus-badge">${role.emoji} ${escHtml(role.name)}</span>` : '<span class="hq-focus-badge" style="background:rgba(180,35,24,0.10);color:#b42318;">🎭 No Role</span>'}
           <span class="hq-focus-badge">+${ft.xp||10} XP</span>
-          ${ft.priority ? `<span class="hq-focus-badge">${ft.priority}</span>` : ''}
+          ${ft.priority
+            ? `<span class="hq-focus-badge">${ft.priority}</span>`
+            : '<span class="hq-focus-badge" style="background:rgba(180,35,24,0.10);color:#b42318;">🔺 No Priority</span>'}
+          ${(!ft.startDate && !ft.deadline)
+            ? '<span class="hq-focus-badge" style="background:rgba(180,35,24,0.10);color:#b42318;">📅 No Date</span>'
+            : ''}
         </div>
-        <button class="btn-focus-complete" onclick="${toggleCall};renderHQExtendedAnalytics()">✓ Complete &amp; Earn XP</button>
+        ${missingStripHTML}
+        ${missingFields.length === 0
+          ? `<button class="btn-focus-complete" onclick="${toggleCall};renderHQExtendedAnalytics()">✓ Complete &amp; Earn XP</button>`
+          : `<button class="btn-focus-complete" style="margin-top:0" onclick="${toggleCall};renderHQExtendedAnalytics()">✓ Complete Anyway</button>`}
       </div>`;
     }
   }
