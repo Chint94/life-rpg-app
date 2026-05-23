@@ -1843,6 +1843,405 @@ body.simple-mode .xp-pop{display:none!important;}
 /* Edit modal */
 #journal-edit-modal .form-label { color: #7b5b00; }
 
+
+/* ══════════════════════════════════════════════════════
+   HQ EXTENDED ANALYTICS — v26
+   ══════════════════════════════════════════════════════ */
+
+/* ── PRODUCTIVITY SCORE CARD ── */
+.hq-prod-score-card {
+  background: linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,236,150,0.84));
+  border: 1px solid rgba(126,83,0,0.22);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 28px rgba(126,83,0,0.12);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.prod-score-ring {
+  flex-shrink: 0;
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative;
+}
+.prod-score-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.prod-score-ring .ring-num {
+  font-family: 'Cinzel', serif;
+  font-size: 20px; font-weight: 900;
+  color: #2b1a00; position: relative; z-index: 1; line-height: 1;
+}
+.prod-score-ring .ring-grade {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 900;
+  letter-spacing: 1px; color: #7a4d00;
+  position: relative; z-index: 1;
+}
+.prod-score-meta { flex: 1; min-width: 0; }
+.prod-score-meta h4 {
+  font-family: 'Cinzel', serif;
+  font-size: 13px; font-weight: 700;
+  color: #2b1a00; margin-bottom: 4px;
+}
+.prod-score-meta p {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; color: #7b5b00; line-height: 1.4;
+}
+.prod-score-factors { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.prod-factor-pill {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,216,74,0.25);
+  border: 1px solid rgba(126,83,0,0.18);
+  color: #5b3c00;
+}
+
+/* ── EXTRA STAT MINI-CARDS ROW ── */
+.hq-extra-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.hq-xstat {
+  background: linear-gradient(145deg,rgba(255,255,255,0.94),rgba(255,242,174,0.78));
+  border: 1px solid rgba(126,83,0,0.18);
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(126,83,0,0.09);
+}
+.hq-xstat-val {
+  font-family: 'Cinzel', serif;
+  font-size: 18px; font-weight: 900;
+  color: #2b1a00; line-height: 1;
+}
+.hq-xstat-lbl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.7px; color: #7b5b00;
+  text-transform: uppercase; margin-top: 4px;
+  line-height: 1.2;
+}
+
+/* ── WEEKLY BAR CHART ── */
+.hq-weekly-chart-card {
+  background: linear-gradient(145deg,rgba(255,255,255,0.95),rgba(255,240,168,0.80));
+  border: 1px solid rgba(126,83,0,0.20);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 24px rgba(126,83,0,0.11);
+}
+.hq-chart-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.hq-chart-kicker {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 900;
+  letter-spacing: 1.6px; color: #b87600; text-transform: uppercase;
+}
+.hq-chart-hdr h4 {
+  font-family: 'Cinzel', serif;
+  font-size: 13px; color: #2b1a00; margin-top: 2px;
+}
+.hq-best-day-pill {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.5px; padding: 4px 10px;
+  background: linear-gradient(135deg,#ffd84a,#b87600);
+  border-radius: 999px; color: #201100;
+  box-shadow: 0 2px 8px rgba(126,83,0,0.18);
+}
+.hq-bar-chart {
+  display: flex; align-items: flex-end;
+  gap: 6px; height: 72px;
+}
+.hq-bar-col {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 4px; height: 100%;
+}
+.hq-bar-wrap {
+  flex: 1; width: 100%; display: flex;
+  align-items: flex-end; justify-content: center;
+}
+.hq-bar-fill {
+  width: 100%; border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg,#ffd84a,#b87600);
+  min-height: 3px;
+  transition: height 0.6s cubic-bezier(.34,1.2,.64,1);
+  position: relative;
+}
+.hq-bar-fill.is-today {
+  background: linear-gradient(180deg,#22c55e,#15803d);
+  box-shadow: 0 0 10px rgba(34,197,94,0.40);
+}
+.hq-bar-fill.is-best {
+  box-shadow: 0 0 10px rgba(245,200,66,0.45);
+}
+.hq-bar-val {
+  font-family: 'Cinzel', serif;
+  font-size: 9px; font-weight: 700; color: #5b3c00;
+}
+.hq-bar-day {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.5px; color: #7b5b00; text-transform: uppercase;
+}
+
+/* ── WEEK VS LAST WEEK COMPARISON ── */
+.hq-compare-card {
+  background: linear-gradient(145deg,rgba(255,255,255,0.95),rgba(255,240,168,0.80));
+  border: 1px solid rgba(126,83,0,0.20);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 24px rgba(126,83,0,0.11);
+}
+.hq-compare-grid {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 8px; align-items: center; margin-top: 12px;
+}
+.hq-compare-col { text-align: center; }
+.hq-compare-week-lbl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight: 900; letter-spacing: 1px;
+  text-transform: uppercase; color: #b87600; margin-bottom: 6px;
+}
+.hq-compare-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 5px; gap: 4px;
+}
+.hq-compare-lbl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 700; color: #7b5b00; flex: 1;
+}
+.hq-compare-num {
+  font-family: 'Cinzel', serif;
+  font-size: 15px; font-weight: 900; color: #2b1a00;
+}
+.hq-compare-divider {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.hq-compare-vs {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 900; color: #b87600;
+}
+.hq-delta {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 800;
+  padding: 2px 6px; border-radius: 999px;
+}
+.hq-delta.up   { background: rgba(22,122,60,0.12); color: #167a3c; }
+.hq-delta.down { background: rgba(180,35,24,0.10); color: #b42318; }
+.hq-delta.same { background: rgba(126,83,0,0.10);  color: #7b5b00; }
+
+/* ── STREAK ANALYTICS ── */
+.hq-streak-analytics {
+  background: linear-gradient(135deg,rgba(255,240,200,0.92),rgba(255,215,74,0.55));
+  border: 1px solid rgba(126,83,0,0.22);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 24px rgba(126,83,0,0.11);
+}
+.hq-streak-top {
+  display: flex; gap: 12px; margin-bottom: 12px;
+}
+.hq-streak-stat {
+  flex: 1; text-align: center;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(126,83,0,0.16);
+  border-radius: 14px; padding: 10px 8px;
+}
+.hq-streak-stat .sv {
+  font-family: 'Cinzel', serif;
+  font-size: 22px; font-weight: 900; color: #2b1a00; line-height: 1;
+}
+.hq-streak-stat .sl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 0.7px; color: #7b5b00;
+  text-transform: uppercase; margin-top: 3px;
+}
+.hq-sparkline {
+  display: flex; align-items: flex-end;
+  gap: 3px; height: 32px; margin-top: 4px;
+}
+.hq-spark-bar {
+  flex: 1; border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg,#ffd84a,#b87600);
+  min-height: 3px;
+}
+.hq-spark-bar.active { background: linear-gradient(180deg,#22c55e,#15803d); }
+.hq-spark-bar.empty  { background: rgba(126,83,0,0.12); }
+.hq-sparkline-lbl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; color: #9b7b40; margin-top: 4px; text-align: center; letter-spacing: 0.5px;
+}
+.hq-consistency-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 10px;
+  background: rgba(255,255,255,0.55); border-radius: 12px; padding: 8px 12px;
+}
+.hq-consistency-row span {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 700; color: #7b5b00;
+}
+.hq-consistency-row strong {
+  font-family: 'Cinzel', serif;
+  font-size: 15px; color: #2b1a00;
+}
+
+/* ── MONTH CALENDAR ── */
+.hq-month-card {
+  background: linear-gradient(145deg,rgba(255,255,255,0.95),rgba(255,240,168,0.80));
+  border: 1px solid rgba(126,83,0,0.20);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 24px rgba(126,83,0,0.11);
+}
+.hq-month-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; margin-top: 10px;
+}
+.hq-cal-hdr-cell {
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight: 900;
+  letter-spacing: 0.5px; color: #9b7b40; text-transform: uppercase;
+  padding-bottom: 3px;
+}
+.hq-cal-day {
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 700;
+  color: #5b3c00;
+  padding: 4px 2px; border-radius: 6px;
+  line-height: 1.2;
+}
+.hq-cal-day.has-done  { background: rgba(22,122,60,0.15); color: #167a3c; }
+.hq-cal-day.has-miss  { background: rgba(180,35,24,0.10); color: #b42318; }
+.hq-cal-day.is-today  { background: linear-gradient(135deg,#ffd84a,#b87600); color: #201100; font-weight: 900; }
+.hq-cal-day.is-future { color: rgba(126,83,0,0.35); }
+.hq-cal-day.empty     { visibility: hidden; }
+
+/* ── FOCUS NOW / QUICK-ACTION ── */
+.hq-focus-card {
+  background: linear-gradient(135deg,rgba(34,197,94,0.10),rgba(22,122,60,0.07));
+  border: 1px solid rgba(22,122,60,0.28);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 24px rgba(22,122,60,0.08);
+}
+.hq-focus-kicker {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 900;
+  letter-spacing: 1.8px; color: #167a3c; text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.hq-focus-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px; font-weight: 700; color: #1a3a20;
+  margin: 4px 0 8px;
+}
+.hq-focus-meta {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.hq-focus-badge {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.5px; padding: 3px 8px;
+  border-radius: 999px; background: rgba(22,122,60,0.12); color: #167a3c;
+}
+.btn-focus-complete {
+  width: 100%; background: linear-gradient(135deg,#22c55e,#15803d);
+  border: none; border-radius: 12px; padding: 11px;
+  color: #fff; font-family: 'Rajdhani', sans-serif;
+  font-weight: 900; font-size: 13px; letter-spacing: 1px;
+  cursor: pointer; transition: all .2s;
+  box-shadow: 0 4px 14px rgba(22,122,60,0.22);
+}
+.btn-focus-complete:active { transform: scale(0.98); }
+.hq-focus-empty {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px; font-weight: 700; color: #167a3c; text-align: center;
+  padding: 8px; letter-spacing: 0.5px;
+}
+
+/* ── ROLE BALANCE ALERT ── */
+.hq-role-alert {
+  border-radius: 14px; padding: 11px 14px;
+  margin: 0 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hq-role-alert.warn {
+  background: rgba(249,115,22,0.10);
+  border: 1px solid rgba(249,115,22,0.30);
+}
+.hq-role-alert.ok {
+  background: rgba(22,122,60,0.08);
+  border: 1px solid rgba(22,122,60,0.22);
+}
+.hq-role-alert-icon { font-size: 20px; flex-shrink: 0; }
+.hq-role-alert-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700; line-height: 1.4;
+}
+.hq-role-alert.warn .hq-role-alert-text { color: #7c3a08; }
+.hq-role-alert.ok   .hq-role-alert-text { color: #167a3c; }
+
+/* ── OVERDUE RISK BADGE ── */
+.hq-overdue-risk {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 900; letter-spacing: 0.8px;
+  padding: 3px 10px; border-radius: 999px;
+  margin-left: 6px;
+}
+.hq-overdue-risk.rising  { background: rgba(180,35,24,0.12); color: #b42318; }
+.hq-overdue-risk.stable  { background: rgba(126,83,0,0.10);  color: #7b5b00; }
+.hq-overdue-risk.falling { background: rgba(22,122,60,0.12); color: #167a3c; }
+
+/* ── PRIORITY HEATMAP ── */
+.hq-heatmap-card {
+  background: linear-gradient(145deg,rgba(255,255,255,0.95),rgba(255,240,168,0.80));
+  border: 1px solid rgba(126,83,0,0.20);
+  border-radius: 20px;
+  padding: 16px;
+  margin: 0 0 14px;
+  box-shadow: 0 8px 24px rgba(126,83,0,0.11);
+}
+.hq-heatmap-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(3, 1fr);
+  gap: 5px; margin-top: 10px;
+}
+.hq-hm-cell {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px; font-weight: 800;
+  border-radius: 8px; padding: 6px 4px;
+  text-align: center; letter-spacing: 0.4px;
+}
+.hq-hm-cell.header { background: none; color: #9b7b40; font-size: 9px; letter-spacing: 0.8px; }
+.hq-hm-cell.row-label { background: none; color: #5b3c00; text-align: left; padding-left: 2px; }
+.hq-hm-val {
+  color: #2b1a00; display: block;
+  font-family: 'Cinzel', serif; font-size: 13px; font-weight: 900;
+}
+@media (max-width: 899px) {
+  .hq-extra-stats { grid-template-columns: repeat(2, 1fr); }
+  .hq-heatmap-grid { grid-template-columns: 68px repeat(3, 1fr); }
+}
 </style>
 </head>
 <body>
@@ -1907,7 +2306,10 @@ body.simple-mode .xp-pop{display:none!important;}
               <div class="insights-kicker">COMMAND ANALYTICS</div>
               <h3>Task Control Snapshot</h3>
             </div>
-            <div class="insights-score" id="insights-score">0%</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="insights-score" id="insights-score">0%</div>
+              <span class="hq-overdue-risk stable" id="hq-overdue-risk-badge">→ STABLE</span>
+            </div>
           </div>
           <div class="insights-body">
             <div class="donut-wrap">
@@ -1924,6 +2326,51 @@ body.simple-mode .xp-pop{display:none!important;}
           <div class="role-distribution" id="role-distribution"></div>
         </div>
 
+        <!-- Productivity Score Card -->
+        <div class="hq-prod-score-card" id="hq-prod-score-card">
+          <div class="prod-score-ring" id="prod-score-ring">
+            <svg viewBox="0 0 76 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="38" cy="38" r="32" stroke="rgba(126,83,0,0.14)" stroke-width="8" fill="none"/>
+              <circle id="prod-ring-arc" cx="38" cy="38" r="32" stroke="#ffd84a" stroke-width="8" fill="none"
+                stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201"
+                style="transition:stroke-dashoffset 1s cubic-bezier(.34,1.2,.64,1),stroke .4s"/>
+            </svg>
+            <div class="ring-num" id="prod-score-num">—</div>
+            <div class="ring-grade" id="prod-score-grade">GRADE</div>
+          </div>
+          <div class="prod-score-meta">
+            <h4>Productivity Score</h4>
+            <p id="prod-score-desc">Composite of completion rate, streak, and overdue ratio.</p>
+            <div class="prod-score-factors" id="prod-score-factors"></div>
+          </div>
+        </div>
+
+        <!-- Extra Stat Mini-Cards -->
+        <div class="hq-extra-stats" id="hq-extra-stats">
+          <div class="hq-xstat">
+            <div class="hq-xstat-val" id="xstat-total">0</div>
+            <div class="hq-xstat-lbl">Total Tasks</div>
+          </div>
+          <div class="hq-xstat">
+            <div class="hq-xstat-val" id="xstat-rate">0%</div>
+            <div class="hq-xstat-lbl">Rate vs Last Wk</div>
+          </div>
+          <div class="hq-xstat">
+            <div class="hq-xstat-val" id="xstat-avg">0</div>
+            <div class="hq-xstat-lbl">Avg / Day (7d)</div>
+          </div>
+          <div class="hq-xstat">
+            <div class="hq-xstat-val" id="xstat-xptoday">0</div>
+            <div class="hq-xstat-lbl">XP Today</div>
+          </div>
+        </div>
+
+        <!-- Focus Now Quick-Action -->
+        <div id="hq-focus-card-wrap"></div>
+
+        <!-- Role Balance Alert -->
+        <div id="hq-role-alert-wrap"></div>
+
         <!-- Pending / Overdue Status Cards -->
         <div class="status-grid" id="dashboard-status-grid">
           <div class="status-card pending" onclick="openTaskStatus('pending_week')">
@@ -1938,6 +2385,40 @@ body.simple-mode .xp-pop{display:none!important;}
             <div class="status-value" id="stat-completed">0</div>
             <div class="status-label">Completed</div>
           </div>
+        </div>
+
+        <!-- Weekly Bar Chart -->
+        <div class="hq-weekly-chart-card" id="hq-weekly-chart-card">
+          <div class="hq-chart-hdr">
+            <div>
+              <div class="hq-chart-kicker">WEEKLY PROGRESS</div>
+              <h4>Tasks Completed Per Day</h4>
+            </div>
+            <div class="hq-best-day-pill" id="hq-best-day-pill">Best: —</div>
+          </div>
+          <div class="hq-bar-chart" id="hq-bar-chart"></div>
+        </div>
+
+        <!-- Week vs Last Week Comparison -->
+        <div class="hq-compare-card" id="hq-compare-card">
+          <div class="hq-chart-hdr">
+            <div>
+              <div class="hq-chart-kicker">PERFORMANCE COMPARISON</div>
+              <h4>This Week vs Last Week</h4>
+            </div>
+          </div>
+          <div class="hq-compare-grid" id="hq-compare-grid"></div>
+        </div>
+
+        <!-- Priority Heatmap -->
+        <div class="hq-heatmap-card" id="hq-heatmap-card">
+          <div class="hq-chart-hdr">
+            <div>
+              <div class="hq-chart-kicker">PRIORITY HEATMAP</div>
+              <h4>Tasks by Role &amp; Priority</h4>
+            </div>
+          </div>
+          <div class="hq-heatmap-grid" id="hq-heatmap-grid"></div>
         </div>
 
         <!-- All Pending / Overdue Overview -->
@@ -1957,6 +2438,35 @@ body.simple-mode .xp-pop{display:none!important;}
             <div id="hq-overdue-all-list"></div>
           </div>
         </div>
+
+        <!-- Streak Analytics -->
+        <div class="hq-streak-analytics" id="hq-streak-analytics">
+          <div class="hq-chart-hdr" style="margin-bottom:10px;">
+            <div>
+              <div class="hq-chart-kicker">STREAK ANALYTICS</div>
+              <h4 style="font-family:'Cinzel',serif;font-size:13px;color:#2b1a00;">Habit &amp; Consistency Tracker</h4>
+            </div>
+          </div>
+          <div class="hq-streak-top" id="hq-streak-top"></div>
+          <div class="hq-sparkline" id="hq-sparkline"></div>
+          <div class="hq-sparkline-lbl">Last 14 days activity</div>
+          <div class="hq-consistency-row" id="hq-consistency-row">
+            <span>30-Day Consistency</span>
+            <strong id="hq-consistency-pct">—%</strong>
+          </div>
+        </div>
+
+        <!-- Month-at-a-Glance Calendar -->
+        <div class="hq-month-card" id="hq-month-card">
+          <div class="hq-chart-hdr">
+            <div>
+              <div class="hq-chart-kicker">MONTH AT A GLANCE</div>
+              <h4 id="hq-month-title" style="font-family:'Cinzel',serif;font-size:13px;color:#2b1a00;"></h4>
+            </div>
+          </div>
+          <div class="hq-month-grid" id="hq-month-grid"></div>
+        </div>
+
 
         <!-- Streak Banner -->
         <div class="streak-banner" id="streak-banner">
@@ -3529,6 +4039,7 @@ function renderDashboard() {
 
   renderHQTaskOverview();
   renderTaskInsights();
+  renderHQExtendedAnalytics();
 
   // Today's tasks
   const today = new Date();
@@ -3568,6 +4079,377 @@ function renderHQTaskOverview() {
   overdueList.innerHTML = overdueAll.length
     ? `<div class="hq-mini-list">${overdueAll.slice(0, 5).map(t => buildTaskMiniHTML(t)).join('')}</div>${overdueAll.length > 5 ? `<div class="hq-list-note">+${overdueAll.length - 5} more overdue task(s). Tap View All.</div>` : ''}`
     : `<div class="empty-state"><span class="empty-icon">🎯</span><p>No overdue tasks.</p></div>`;
+}
+
+// ─────────────────────────────────────────────
+// HQ EXTENDED ANALYTICS — v26
+// ─────────────────────────────────────────────
+function renderHQExtendedAnalytics() {
+  const allTasks = Object.values(tasks || {});
+  const today = new Date();
+  const todayStr = toDateStr(today);
+
+  // ── helpers ──────────────────────────────────
+  function completedOnDate(dateStr) {
+    return allTasks.filter(t => {
+      const isRec = t.recurrence && t.recurrence !== 'none';
+      if (isRec) return (t.completedDates || []).includes(dateStr) || t.lastCompletedDate === dateStr;
+      if (!t.completedAt) return false;
+      const d = (t.completedAt?.toDate ? t.completedAt.toDate() : new Date(t.completedAt));
+      return toDateStr(d) === dateStr;
+    }).length;
+  }
+
+  function weekBoundsFor(refDate) {
+    const start = startOfDay(new Date(refDate));
+    const day = start.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diffToMonday);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23,59,59,999);
+    return { start, end };
+  }
+
+  // ── XP earned today ──────────────────────────
+  const xpToday = allTasks.reduce((sum, t) => {
+    const isRec = t.recurrence && t.recurrence !== 'none';
+    const completedTodayFlag = isRec
+      ? ((t.completedDates || []).includes(todayStr) || t.lastCompletedDate === todayStr)
+      : (t.completedAt && toDateStr(t.completedAt?.toDate ? t.completedAt.toDate() : new Date(t.completedAt)) === todayStr);
+    return completedTodayFlag ? sum + (t.xp || 10) : sum;
+  }, 0);
+  const xpTodayEl = document.getElementById('xstat-xptoday');
+  if (xpTodayEl) xpTodayEl.textContent = xpToday;
+
+  // ── Total tasks ───────────────────────────────
+  const xstatTotal = document.getElementById('xstat-total');
+  if (xstatTotal) xstatTotal.textContent = allTasks.length;
+
+  // ── Completion rate trend (this week vs last week) ──
+  const thisWeek = weekBoundsFor(today);
+  const lastWeekRef = new Date(today); lastWeekRef.setDate(today.getDate() - 7);
+  const lastWeek = weekBoundsFor(lastWeekRef);
+
+  function countCompletedInRange(start, end) {
+    let count = 0;
+    const cursor = new Date(start); cursor.setHours(12,0,0,0);
+    while (cursor <= end) {
+      count += completedOnDate(toDateStr(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return count;
+  }
+  function countPendingInRange(start, end) {
+    return allTasks.filter(t => taskOccursInRange(t, start, end) && isTaskPending(t)).length;
+  }
+  function countOverdueInRange(start, end) {
+    return allTasks.filter(t => taskOccursInRange(t, start, end) && isTaskOverdue(t)).length;
+  }
+
+  const thisCompleted  = countCompletedInRange(thisWeek.start, thisWeek.end);
+  const lastCompleted  = countCompletedInRange(lastWeek.start, lastWeek.end);
+  const thisPending    = countPendingInRange(thisWeek.start, thisWeek.end);
+  const lastPending    = countPendingInRange(lastWeek.start, lastWeek.end);
+  const thisOverdue    = countOverdueInRange(thisWeek.start, thisWeek.end);
+  const lastOverdue    = countOverdueInRange(lastWeek.start, lastWeek.end);
+
+  // Rate trend
+  const rateDelta = lastCompleted === 0
+    ? (thisCompleted > 0 ? '+∞' : '—')
+    : `${thisCompleted >= lastCompleted ? '+' : ''}${Math.round(((thisCompleted - lastCompleted)/lastCompleted)*100)}%`;
+  const xstatRate = document.getElementById('xstat-rate');
+  if (xstatRate) xstatRate.textContent = rateDelta;
+
+  // ── Avg tasks/day (7d) ────────────────────────
+  let avgSum = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    avgSum += completedOnDate(toDateStr(d));
+  }
+  const xstatAvg = document.getElementById('xstat-avg');
+  if (xstatAvg) xstatAvg.textContent = (avgSum / 7).toFixed(1);
+
+  // ── Productivity Score ────────────────────────
+  const total = allTasks.length || 1;
+  const completedCount = allTasks.filter(t => {
+    const isRec = t.recurrence && t.recurrence !== 'none';
+    return isRec ? isOccurrenceComplete(t, today) : !!t.completed;
+  }).length;
+  const overdueCount = allTasks.filter(t => isTaskOverdue(t)).length;
+  const streak = userData.streak || 0;
+  const compRate   = completedCount / total;         // 0–1
+  const overdueRatio = overdueCount / total;         // 0–1
+  const streakBonus  = Math.min(streak / 30, 1);     // 0–1 capped at 30d streak
+  const rawScore = Math.round((compRate * 0.5 + (1 - overdueRatio) * 0.35 + streakBonus * 0.15) * 100);
+
+  let grade = 'F', gradeColor = '#b42318';
+  if (rawScore >= 90) { grade = 'S'; gradeColor = '#b87600'; }
+  else if (rawScore >= 75) { grade = 'A'; gradeColor = '#167a3c'; }
+  else if (rawScore >= 60) { grade = 'B'; gradeColor = '#0284c7'; }
+  else if (rawScore >= 45) { grade = 'C'; gradeColor = '#d97706'; }
+  else if (rawScore >= 30) { grade = 'D'; gradeColor = '#b45309'; }
+
+  const prodNum   = document.getElementById('prod-score-num');
+  const prodGrade = document.getElementById('prod-score-grade');
+  const prodArc   = document.getElementById('prod-ring-arc');
+  const prodDesc  = document.getElementById('prod-score-desc');
+  const prodFact  = document.getElementById('prod-score-factors');
+  if (prodNum)   prodNum.textContent = rawScore;
+  if (prodGrade) { prodGrade.textContent = grade; prodGrade.style.color = gradeColor; }
+  if (prodArc) {
+    const circ = 2 * Math.PI * 32;
+    const offset = circ * (1 - rawScore / 100);
+    prodArc.setAttribute('stroke-dasharray', circ.toFixed(1));
+    prodArc.setAttribute('stroke-dashoffset', offset.toFixed(1));
+    prodArc.setAttribute('stroke', gradeColor);
+  }
+  if (prodDesc) {
+    const msgs = {
+      S: 'Exceptional! You\'re dominating your life goals.',
+      A: 'Excellent performance. Keep pushing!',
+      B: 'Good progress. A few overdue items to clear.',
+      C: 'Decent, but overdue tasks need attention.',
+      D: 'Needs improvement — try completing at least 1 task today.',
+      F: 'Start small — add a task and check it off!'
+    };
+    prodDesc.textContent = msgs[grade] || '';
+  }
+  if (prodFact) {
+    prodFact.innerHTML = [
+      `<span class="prod-factor-pill">✅ ${Math.round(compRate*100)}% done</span>`,
+      `<span class="prod-factor-pill">🔥 ${streak}d streak</span>`,
+      `<span class="prod-factor-pill">⚠️ ${overdueCount} overdue</span>`
+    ].join('');
+  }
+
+  // ── Overdue Risk Badge ────────────────────────
+  const riskBadge = document.getElementById('hq-overdue-risk-badge');
+  if (riskBadge) {
+    if (thisOverdue > lastOverdue + 1) {
+      riskBadge.textContent = '↑ RISING'; riskBadge.className = 'hq-overdue-risk rising';
+    } else if (thisOverdue < lastOverdue) {
+      riskBadge.textContent = '↓ FALLING'; riskBadge.className = 'hq-overdue-risk falling';
+    } else {
+      riskBadge.textContent = '→ STABLE'; riskBadge.className = 'hq-overdue-risk stable';
+    }
+  }
+
+  // ── Weekly Bar Chart ──────────────────────────
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const barData = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const ds = toDateStr(d);
+    barData.push({ day: dayNames[(d.getDay() + 6) % 7], count: completedOnDate(ds), dateStr: ds, isToday: ds === todayStr });
+  }
+  const maxBar = Math.max(1, ...barData.map(b => b.count));
+  let bestDayIdx = barData.reduce((bi, b, i) => b.count > barData[bi].count ? i : bi, 0);
+
+  const barChart = document.getElementById('hq-bar-chart');
+  if (barChart) {
+    barChart.innerHTML = barData.map((b, i) => {
+      const pct = Math.round((b.count / maxBar) * 100);
+      const isBest = i === bestDayIdx && b.count > 0;
+      return `<div class="hq-bar-col">
+        <div class="hq-bar-val">${b.count || ''}</div>
+        <div class="hq-bar-wrap">
+          <div class="hq-bar-fill ${b.isToday ? 'is-today' : ''} ${isBest && !b.isToday ? 'is-best' : ''}" style="height:${pct}%"></div>
+        </div>
+        <div class="hq-bar-day">${b.day}</div>
+      </div>`;
+    }).join('');
+  }
+  const bestPill = document.getElementById('hq-best-day-pill');
+  if (bestPill) {
+    bestPill.textContent = barData[bestDayIdx]?.count > 0
+      ? `Best: ${barData[bestDayIdx].day} (${barData[bestDayIdx].count})`
+      : 'Best: —';
+  }
+
+  // ── Week vs Last Week Comparison ─────────────
+  const compareGrid = document.getElementById('hq-compare-grid');
+  if (compareGrid) {
+    function delta(a, b) {
+      if (a > b) return `<span class="hq-delta up">▲ ${a-b}</span>`;
+      if (a < b) return `<span class="hq-delta down">▼ ${b-a}</span>`;
+      return `<span class="hq-delta same">= same</span>`;
+    }
+    const rows = [
+      ['Completed', thisCompleted, lastCompleted],
+      ['Pending', thisPending, lastPending],
+      ['Overdue', thisOverdue, lastOverdue],
+    ];
+    compareGrid.innerHTML = `
+      <div class="hq-compare-col">
+        <div class="hq-compare-week-lbl">THIS WEEK</div>
+        ${rows.map(([l, a]) => `<div class="hq-compare-row"><span class="hq-compare-lbl">${l}</span><span class="hq-compare-num">${a}</span></div>`).join('')}
+      </div>
+      <div class="hq-compare-divider">
+        <span class="hq-compare-vs">VS</span>
+        ${rows.map(([,a,b]) => `<div style="margin:2px 0">${delta(a,b)}</div>`).join('')}
+      </div>
+      <div class="hq-compare-col">
+        <div class="hq-compare-week-lbl">LAST WEEK</div>
+        ${rows.map(([l,,b]) => `<div class="hq-compare-row"><span class="hq-compare-lbl">${l}</span><span class="hq-compare-num">${b}</span></div>`).join('')}
+      </div>`;
+  }
+
+  // ── Priority Heatmap ──────────────────────────
+  const heatGrid = document.getElementById('hq-heatmap-grid');
+  if (heatGrid) {
+    const topRoleIds = Object.keys(roles).slice(0, 3);
+    const priorities = ['High','Medium','Low'];
+    const pColor = { High: 'rgba(180,35,24,0.18)', Medium: 'rgba(184,118,0,0.14)', Low: 'rgba(22,122,60,0.12)' };
+    const pText  = { High: '#b42318', Medium: '#b87600', Low: '#167a3c' };
+    let html = `<div class="hq-hm-cell header"></div>
+      ${priorities.map(p => `<div class="hq-hm-cell header">${p}</div>`).join('')}`;
+    topRoleIds.forEach(rid => {
+      const role = roles[rid];
+      if (!role) return;
+      html += `<div class="hq-hm-cell row-label">${role.emoji || '🎯'} ${escHtml(role.name).slice(0,8)}</div>`;
+      priorities.forEach(p => {
+        const cnt = allTasks.filter(t => t.roleId === rid && (t.priority || 'Medium') === p).length;
+        html += `<div class="hq-hm-cell" style="background:${pColor[p]}">
+          <span class="hq-hm-val" style="color:${pText[p]}">${cnt}</span></div>`;
+      });
+    });
+    if (!topRoleIds.length) {
+      html += `<div class="hq-hm-cell row-label" style="grid-column:1/-1;color:#9b7b40;font-size:11px;">Add roles &amp; tasks to see the heatmap.</div>`;
+    }
+    heatGrid.innerHTML = html;
+  }
+
+  // ── Focus Now ─────────────────────────────────
+  const focusWrap = document.getElementById('hq-focus-card-wrap');
+  if (focusWrap) {
+    const candidates = allTasks
+      .filter(t => (isTaskOverdue(t) || (isTaskForDate(t, today) && !isOccurrenceComplete(t, today) && !t.completed)))
+      .sort((a,b) => {
+        const pMap = { High: 0, Medium: 1, Low: 2 };
+        const pa = pMap[a.priority || 'Medium'], pb = pMap[b.priority || 'Medium'];
+        if (pa !== pb) return pa - pb;
+        return (timeToMinutes(a.startTime) ?? 9999) - (timeToMinutes(b.startTime) ?? 9999);
+      });
+    if (candidates.length === 0) {
+      focusWrap.innerHTML = `<div class="hq-focus-card">
+        <div class="hq-focus-kicker">⚡ FOCUS NOW</div>
+        <div class="hq-focus-empty">🎉 All caught up! No urgent tasks right now.</div>
+      </div>`;
+    } else {
+      const ft = candidates[0];
+      const role = ft.roleId && roles[ft.roleId];
+      const overdueMark = isTaskOverdue(ft) ? '<span class="hq-focus-badge" style="background:rgba(180,35,24,0.12);color:#b42318;">⚠ OVERDUE</span>' : '<span class="hq-focus-badge">📅 DUE TODAY</span>';
+      const isRec = ft.recurrence && ft.recurrence !== 'none';
+      const toggleCall = isRec ? `toggleTask('${ft.id}',event,'${todayStr}')` : `toggleTask('${ft.id}',event)`;
+      focusWrap.innerHTML = `<div class="hq-focus-card">
+        <div class="hq-focus-kicker">⚡ FOCUS NOW — TOP PRIORITY</div>
+        <div class="hq-focus-title">${escHtml(ft.title)}</div>
+        <div class="hq-focus-meta">
+          ${overdueMark}
+          ${role ? `<span class="hq-focus-badge">${role.emoji} ${escHtml(role.name)}</span>` : ''}
+          <span class="hq-focus-badge">+${ft.xp||10} XP</span>
+          ${ft.priority ? `<span class="hq-focus-badge">${ft.priority}</span>` : ''}
+        </div>
+        <button class="btn-focus-complete" onclick="${toggleCall};renderHQExtendedAnalytics()">✓ Complete &amp; Earn XP</button>
+      </div>`;
+    }
+  }
+
+  // ── Role Balance Alert ────────────────────────
+  const alertWrap = document.getElementById('hq-role-alert-wrap');
+  if (alertWrap) {
+    const pendingByRole = {};
+    const pendingAll2 = allTasks.filter(t => isTaskPending(t));
+    pendingAll2.forEach(t => {
+      const key = t.roleId || '_none';
+      pendingByRole[key] = (pendingByRole[key] || 0) + 1;
+    });
+    const entries = Object.entries(pendingByRole).sort((a,b) => b[1]-a[1]);
+    const topEntry = entries[0];
+    const pTotal = pendingAll2.length;
+    if (topEntry && pTotal > 0 && (topEntry[1] / pTotal) > 0.6) {
+      const role = roles[topEntry[0]];
+      const roleName = role ? `${role.emoji} ${role.name}` : 'Unassigned';
+      const pct = Math.round((topEntry[1]/pTotal)*100);
+      alertWrap.innerHTML = `<div class="hq-role-alert warn">
+        <span class="hq-role-alert-icon">⚠️</span>
+        <span class="hq-role-alert-text"><strong>${roleName}</strong> has ${pct}% of all pending tasks (${topEntry[1]}/${pTotal}). Consider rebalancing across roles.</span>
+      </div>`;
+    } else {
+      alertWrap.innerHTML = `<div class="hq-role-alert ok">
+        <span class="hq-role-alert-icon">✅</span>
+        <span class="hq-role-alert-text">Role workload is balanced. No single role dominates your pending list.</span>
+      </div>`;
+    }
+  }
+
+  // ── Streak Analytics ──────────────────────────
+  const streakTop = document.getElementById('hq-streak-top');
+  const sparkLine = document.getElementById('hq-sparkline');
+  const consistEl = document.getElementById('hq-consistency-pct');
+  const currentStreak = userData.streak || 0;
+  const longestStreak = Math.max(userData.longestStreak || currentStreak, currentStreak);
+
+  // 14-day sparkline
+  const spark14 = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    spark14.push(completedOnDate(toDateStr(d)));
+  }
+  const sparkMax = Math.max(1, ...spark14);
+
+  if (sparkLine) {
+    sparkLine.innerHTML = spark14.map((v, i) => {
+      const h = Math.round((v / sparkMax) * 100);
+      const cls = v > 0 ? (i === 13 ? 'active' : '') : 'empty';
+      return `<div class="hq-spark-bar ${cls}" style="height:${Math.max(10, h)}%"></div>`;
+    }).join('');
+  }
+  if (streakTop) {
+    streakTop.innerHTML = [
+      { label: 'Current Streak', val: `${currentStreak} 🔥` },
+      { label: 'Longest Streak', val: `${longestStreak} 🏆` },
+      { label: 'This Week', val: thisCompleted },
+    ].map(s => `<div class="hq-streak-stat"><div class="sv">${s.val}</div><div class="sl">${s.label}</div></div>`).join('');
+  }
+
+  // 30-day consistency
+  let daysActive = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    if (completedOnDate(toDateStr(d)) > 0) daysActive++;
+  }
+  if (consistEl) consistEl.textContent = `${Math.round((daysActive/30)*100)}%`;
+
+  // ── Month-at-a-Glance Calendar ────────────────
+  const monthGrid = document.getElementById('hq-month-grid');
+  const monthTitle = document.getElementById('hq-month-title');
+  if (monthGrid) {
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const y = today.getFullYear(), m = today.getMonth();
+    if (monthTitle) monthTitle.textContent = `${monthNames[m]} ${y}`;
+    const firstDay = new Date(y, m, 1);
+    const lastDay  = new Date(y, m+1, 0);
+    const startPad = (firstDay.getDay() + 6) % 7; // Mon=0
+    const headers = ['M','T','W','T','F','S','S'];
+    let html = headers.map(h => `<div class="hq-cal-hdr-cell">${h}</div>`).join('');
+    for (let p = 0; p < startPad; p++) html += `<div class="hq-cal-day empty">·</div>`;
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const d = new Date(y, m, day);
+      const ds = toDateStr(d);
+      const isToday = ds === todayStr;
+      const isFuture = d > today;
+      const cnt = completedOnDate(ds);
+      let cls = 'hq-cal-day';
+      if (isToday) cls += ' is-today';
+      else if (isFuture) cls += ' is-future';
+      else if (cnt > 0) cls += ' has-done';
+      else cls += ' has-miss';
+      html += `<div class="${cls}" title="${cnt} done">${day}</div>`;
+    }
+    monthGrid.innerHTML = html;
+  }
 }
 
 function buildTaskMiniHTML(t) {
