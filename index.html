@@ -3134,7 +3134,7 @@ function isTaskForDate(t, date) {
   const target = startOfDay(date);
   // Check skipped dates (individual occurrence deletions)
   if (t.skippedDates && t.skippedDates.length) {
-    const targetStr = target.toISOString().slice(0, 10);
+    const targetStr = toDateStr(target);
     if (t.skippedDates.includes(targetStr)) return false;
   }
   // Check recurrence end date
@@ -3233,8 +3233,12 @@ function getNextRecurrenceDate(t, fromDate) {
 // ─────────────────────────────────────────────
 // Returns ISO date string "YYYY-MM-DD" for a date value
 function toDateStr(date) {
+  // Use LOCAL date parts so IST (and any timezone) never returns the wrong calendar day.
   const d = (date instanceof Date) ? date : new Date(date);
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 // Is this specific date-occurrence of a recurring task completed?
@@ -3779,7 +3783,12 @@ function renderTasks() {
   today.setHours(0, 0, 0, 0);
 
   let arr = Object.values(tasks);
-  if (taskFilter === 'pending') arr = arr.filter(t => isTaskPending(t));
+  if (taskFilter === 'all') {
+    // "All" shows every task that is NOT fully/globally completed.
+    // Recurring tasks that have rolled forward still have completed:false → shown.
+    // One-time tasks marked done and series-finished recurring tasks → hidden here.
+    arr = arr.filter(t => !t.completed);
+  } else if (taskFilter === 'pending') arr = arr.filter(t => isTaskPending(t));
   else if (taskFilter === 'pending_week') arr = arr.filter(t => taskIsPendingThisWeek(t));
   else if (taskFilter === 'completed') arr = arr.filter(t => {
     if (t.parentRecurId) return !!t.completed; // child: use global flag
@@ -3824,7 +3833,7 @@ function buildTaskCardHTML(t) {
   const roleColor = role ? role.color : '#6b7299';
   const pColors = { high: '#ef4444', medium: '#f97316', low: '#22c55e' };
   const today = new Date(); today.setHours(0,0,0,0);
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = toDateStr(today);
 
   const isRecurring = t.recurrence && t.recurrence !== 'none';
   // Note: parentRecurId / isSpawnedChild concept is deprecated with the auto-advance approach,
@@ -3910,18 +3919,24 @@ window.toggleTask = async (id, event, dateStr) => {
 
   if (isRecurring) {
     const ds = dateStr || toDateStr(new Date());
-    const completedDates = [...(t.completedDates || [])];
-    const alreadyDone = completedDates.includes(ds);
+    // alreadyDone: use isOccurrenceComplete so it works even when completedDates is empty
+    // (which happens after auto-advance clears it)
+    const alreadyDone = isOccurrenceComplete(t, parseDateOnly(ds));
 
     if (alreadyDone) {
       // ── UN-TICK ──────────────────────────────────────────────────────────
       // The task has already been auto-advanced; un-ticking is not meaningful
       // after roll-forward. We simply show a toast and do nothing destructive.
       // (If the user wants to undo, they can edit the start date manually.)
-      showToast?.('✅ This occurrence was already completed and the task rolled forward. Edit the task to adjust the start date if needed.', 'info');
+      showToast('✅ Already completed & rolled forward. Edit the task to adjust the start date if needed.', 'info');
     } else {
       // ── TICK: mark done, then auto-advance startDate to next occurrence ──
+      // Use the task's current startDate as the recurrence anchor (it holds the
+      // original series base). If startDate is in the future relative to ds, that
+      // means this is a future occurrence being completed early — use ds directly.
       const completedDay = parseDateOnly(ds);
+      // For getNextRecurrenceDate we always anchor from the COMPLETED date (ds),
+      // but pass the task's original recurrence config unchanged.
       const next = getNextRecurrenceDate(t, completedDay);
 
       // Archive this occurrence in recurrenceHistory
@@ -4057,7 +4072,7 @@ window.deleteTask = async (id, dateStr) => {
   const isRecurring = t.recurrence && t.recurrence !== 'none';
   if (isRecurring) {
     _recurDeleteId   = id;
-    _recurDeleteDate = dateStr || new Date().toISOString().slice(0, 10);
+    _recurDeleteDate = dateStr || toDateStr(new Date());
     const sub = document.getElementById('recur-delete-sub');
     if (sub) sub.textContent = `"${t.title}" repeats ${recurrenceLabel(t)}. What would you like to delete?`;
     document.getElementById('recur-delete-modal')?.classList.add('open');
@@ -4151,7 +4166,7 @@ window.deleteEditingTask = async () => {
     const sub = document.getElementById('recur-delete-sub');
     if (sub) sub.textContent = `"${t.title}" repeats ${recurrenceLabel(t)}. What would you like to delete?`;
     _recurDeleteId   = id;
-    _recurDeleteDate = new Date().toISOString().slice(0, 10);
+    _recurDeleteDate = toDateStr(new Date());
     document.getElementById('recur-delete-modal')?.classList.add('open');
   } else {
     editingTaskId = null;
@@ -4169,7 +4184,7 @@ window.openRecurRepeatModal = (id) => {
   if (!t) return;
   _recurRepeatId = id;
   // Pre-fill form with current task values
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = toDateStr(new Date());
   document.getElementById('rr-start-date').value   = todayStr;
   document.getElementById('rr-end-date').value      = '';
   document.getElementById('rr-start-time').value   = t.startTime || '';
@@ -5510,7 +5525,7 @@ function gcalMarkConnected() {
   // Pre-fill date range: today → +30 days
   const today = new Date();
   const in30  = new Date(today); in30.setDate(today.getDate() + 30);
-  const fmt   = d => d.toISOString().slice(0, 10);
+  const fmt   = d => toDateStr(d);
   const fromEl = document.getElementById('gcal-from');
   const toEl   = document.getElementById('gcal-to');
   if (fromEl && !fromEl.value) fromEl.value = fmt(today);
