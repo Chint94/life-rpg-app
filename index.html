@@ -2809,6 +2809,29 @@ function showSaveError(kind, e) {
   alert(`${kind} was saved on this device, but Firebase sync failed: ${e?.message || 'Please check internet/Firebase rules.'}`);
 }
 
+// Generic notification toast (used for recurring task roll-forward feedback)
+function showToast(message, type = 'info') {
+  const existing = document.getElementById('cd-generic-toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'cd-generic-toast';
+  const bg = type === 'success'
+    ? 'linear-gradient(135deg,#1a3a1a,#0f200f)'
+    : type === 'info'
+    ? 'linear-gradient(135deg,#1a2a40,#0f1a30)'
+    : 'linear-gradient(135deg,#3a1a1a,#200f0f)';
+  const border = type === 'success' ? 'var(--green)' : type === 'info' ? 'var(--cyan)' : 'var(--red)';
+  el.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+    background:${bg};border:1px solid ${border};color:#e8e8e8;
+    font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:.5px;
+    padding:10px 20px;border-radius:12px;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,.4);
+    max-width:90vw;text-align:center;pointer-events:none;
+    animation:toastIn 3.5s ease forwards;`;
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3600);
+}
+
 function renderAllLocal() {
   populateRoleSelect();
   renderRoles();
@@ -3215,11 +3238,24 @@ function toDateStr(date) {
 }
 
 // Is this specific date-occurrence of a recurring task completed?
+// With the auto-advance approach: the task's startDate always points to the
+// NEXT pending occurrence. So today's occurrence is "done" only if the task's
+// startDate has already moved past today (meaning it was completed and rolled).
+// We also honour the completedDates array for backward-compatibility with older data.
 function isOccurrenceComplete(t, date) {
   const isRecurring = t.recurrence && t.recurrence !== 'none';
   if (!isRecurring) return !!t.completed; // non-recurring: use global flag
+  if (t.completed) return true; // series finished
   const ds = toDateStr(date);
-  return !!(t.completedDates || []).includes(ds);
+  // Legacy path: completedDates still present
+  if ((t.completedDates || []).includes(ds)) return true;
+  // Auto-advance path: if startDate is strictly after this date, this occurrence was completed
+  if (t.startDate) {
+    const taskStart = parseDateOnly(t.startDate);
+    const targetDay = startOfDay(date);
+    if (taskStart && startOfDay(taskStart) > targetDay) return true;
+  }
+  return false;
 }
 
 // Is this specific date-occurrence pending (not complete, not overdue)?
@@ -3753,14 +3789,25 @@ function renderTasks() {
   else if (taskFilter === 'overdue') arr = arr.filter(t => isTaskOverdue(t));
   else if (taskFilter === 'overdue_week') arr = arr.filter(t => taskIsOverdueThisWeek(t));
 
+  // ── Sort: closest start date first ──────────────────────────────────
+  // For recurring tasks, startDate is always the next pending occurrence
+  // (auto-advanced on each completion). For one-time tasks use startDate
+  // first, then deadline as fallback. Tasks with no date go to the bottom.
+  function effectiveSortDate(t) {
+    // startDate is the primary sort key — for recurring tasks it is the
+    // next occurrence; for one-time tasks it is when the task begins.
+    return t.startDate || t.deadline || '9999-12-31';
+  }
+
   arr.sort((a, b) => {
-    // Sort by deadline/startDate first, then time, then priority
-    const aDate = a.deadline || a.startDate || '';
-    const bDate = b.deadline || b.startDate || '';
+    const aDate = effectiveSortDate(a);
+    const bDate = effectiveSortDate(b);
     if (aDate !== bDate) return aDate < bDate ? -1 : 1;
+    // Same date → sort by start time (earlier first; no-time tasks go last)
     const aTime = timeToMinutes(a.startTime) ?? 9999;
     const bTime = timeToMinutes(b.startTime) ?? 9999;
     if (aTime !== bTime) return aTime - bTime;
+    // Same date + time → sort by priority (high first)
     const pMap = { high: 0, medium: 1, low: 2 };
     return (pMap[a.priority] || 1) - (pMap[b.priority] || 1);
   });
@@ -3780,10 +3827,13 @@ function buildTaskCardHTML(t) {
   const todayStr = today.toISOString().slice(0, 10);
 
   const isRecurring = t.recurrence && t.recurrence !== 'none';
-  const isSpawnedChild = !!t.parentRecurId; // child task spawned from a completed recurrence
+  // Note: parentRecurId / isSpawnedChild concept is deprecated with the auto-advance approach,
+  // but kept for backward compat with any tasks created by older versions.
+  const isSpawnedChild = !!t.parentRecurId;
 
-  // For display: per-occurrence done state for recurring parent, global for one-time / child
-  const isDoneToday = isRecurring && !isSpawnedChild
+  // For display: a recurring task is "done today" if it has been completed and rolled forward
+  // (its startDate moved past today), or if the global completed flag is set.
+  const isDoneToday = isRecurring
     ? isOccurrenceComplete(t, today)
     : !!t.completed;
 
@@ -3797,18 +3847,18 @@ function buildTaskCardHTML(t) {
   }
   const notesHTML = t.notes ? `<div class="task-notes-preview"><div class="task-notes-preview-title">Notes</div>${escHtml(t.notes)}</div>` : '';
 
-  // Completed-dates count badge — only on recurring parents
-  const doneCount = (isRecurring && !isSpawnedChild) ? (t.completedDates || []).length : 0;
+  // History count badge — show how many times this recurring task has been completed
+  const doneCount = (isRecurring && !isSpawnedChild) ? (t.recurrenceHistory || []).length : 0;
   const doneCountBadge = doneCount > 0
-    ? `<span style="font-size:10px;color:var(--green);font-family:'Rajdhani',sans-serif">✅ ${doneCount} done</span>`
+    ? `<span style="font-size:10px;color:var(--green);font-family:'Rajdhani',sans-serif">✅ ${doneCount}× done</span>`
     : '';
 
-  // "Next occurrence" label on spawned children
+  // "Next occurrence" label on legacy spawned children (backward compat)
   const nextOccurrenceBadge = isSpawnedChild
     ? `<span style="font-size:10px;color:var(--purple);font-family:'Rajdhani',sans-serif;background:var(--purple-glow);padding:2px 7px;border-radius:6px;">⏭ Next occurrence</span>`
     : '';
 
-  // Recurrence label — show on recurring parents, not on children (they display the next-occurrence badge instead)
+  // Recurrence label
   const recurBadge = (isRecurring && !isSpawnedChild && recurrenceLabel(t))
     ? `<span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif">🔄 ${recurrenceLabel(t)}</span>`
     : '';
@@ -3859,125 +3909,104 @@ window.toggleTask = async (id, event, dateStr) => {
   const isRecurring = t.recurrence && t.recurrence !== 'none';
 
   if (isRecurring) {
-    // Per-occurrence toggle
     const ds = dateStr || toDateStr(new Date());
     const completedDates = [...(t.completedDates || [])];
     const alreadyDone = completedDates.includes(ds);
-    let updatedDates;
 
     if (alreadyDone) {
-      // UN-TICK: remove from completedDates and delete any spawned child for this date
-      updatedDates = completedDates.filter(d => d !== ds);
-      tasks[id] = { ...t, completedDates: updatedDates, updatedAtLocal: new Date().toISOString() };
-
-      // Remove any spawned child task that was created for the next date after ds
-      const childId = Object.keys(tasks).find(k =>
-        tasks[k].parentRecurId === id && tasks[k].spawnedFromDate === ds
-      );
-      if (childId) {
-        delete tasks[childId];
-        if (uid) {
-          try { await deleteDoc(doc(db, 'users', uid, 'tasks', childId)); } catch (_) {}
-        }
-      }
-
-      persistLocalState();
-      renderAllLocal();
-      try {
-        if (uid) {
-          await updateDoc(doc(db, 'users', uid, 'tasks', id), {
-            completedDates: updatedDates,
-            updatedAt: serverTimestamp()
-          });
-        }
-        // Deduct XP
-        const newTotal = Math.max(0, (userData.totalXP || 0) - (t.xp || 10));
-        userData.totalXP = newTotal;
-        userData.level = calcLevel(newTotal);
-        persistLocalState();
-        renderDashboard();
-        if (uid) await setDoc(doc(db, 'users', uid), { totalXP: newTotal, level: calcLevel(newTotal) }, { merge: true });
-      } catch (e) { showSaveError('Task completion', e); }
-
+      // ── UN-TICK ──────────────────────────────────────────────────────────
+      // The task has already been auto-advanced; un-ticking is not meaningful
+      // after roll-forward. We simply show a toast and do nothing destructive.
+      // (If the user wants to undo, they can edit the start date manually.)
+      showToast?.('✅ This occurrence was already completed and the task rolled forward. Edit the task to adjust the start date if needed.', 'info');
     } else {
-      // TICK: mark this occurrence done
-      updatedDates = [...completedDates, ds];
-      tasks[id] = { ...t, completedDates: updatedDates, updatedAtLocal: new Date().toISOString() };
-
-      // Spawn a new child task for the next recurrence date (if not already spawned)
+      // ── TICK: mark done, then auto-advance startDate to next occurrence ──
       const completedDay = parseDateOnly(ds);
       const next = getNextRecurrenceDate(t, completedDay);
-      let childId = null;
-      if (next) {
-        const nextStr = toDateStr(next);
-        // Only spawn if no child already exists for this ds → nextStr pair
-        const existingChild = Object.values(tasks).find(k =>
-          k.parentRecurId === id && k.spawnedFromDate === ds
-        );
-        if (!existingChild) {
-          childId = newLocalId('task');
-          const child = {
-            id:               childId,
-            title:            t.title,
-            roleId:           t.roleId   || null,
-            xp:               t.xp       || 10,
-            priority:         t.priority || 'medium',
-            startDate:        nextStr,
-            deadline:         nextStr,
-            startTime:        t.startTime || null,
-            endTime:          t.endTime   || null,
-            // Carry the full recurrence config so getNextRecurrenceDate works on child too
-            recurrence:       t.recurrence,
-            hourlyInterval:   t.hourlyInterval,
-            customType:       t.customType,
-            customInterval:   t.customInterval,
-            customUnit:       t.customUnit,
-            customNth:        t.customNth,
-            weeklyWeekdays:   t.weeklyWeekdays   || [],
-            customWeekdays:   t.customWeekdays   || [],
-            intervalWeekdays: t.intervalWeekdays || [],
-            recurrenceEndDate: t.recurrenceEndDate || null,
-            notes:            t.notes   || '',
-            steps:            [],
-            completed:        false,
-            completedAt:      null,
-            completedDates:   [],
-            skippedDates:     [],
-            recurrenceHistory:[],
-            parentRecurId:    id,          // link back to parent
-            spawnedFromDate:  ds,          // which completion triggered this
-            createdAtLocal:   new Date().toISOString(),
-            updatedAtLocal:   new Date().toISOString(),
-            driveAttachments: t.driveAttachments || []
-          };
-          tasks[childId] = child;
-          if (uid) {
-            try {
-              await setDoc(doc(db, 'users', uid, 'tasks', childId), {
-                ...child,
-                updatedAt: serverTimestamp()
-              });
-            } catch (e) { showSaveError('Next recurrence task', e); }
-          }
-        }
-      }
 
-      persistLocalState();
-      renderAllLocal();
-      try {
-        if (uid) {
-          await updateDoc(doc(db, 'users', uid, 'tasks', id), {
-            completedDates: updatedDates,
-            updatedAt: serverTimestamp()
-          });
-        }
-        const el = event?.currentTarget;
-        await addXP(t.xp || 10, t.roleId, el);
-        await updateStreak();
-      } catch (e) { showSaveError('Task completion', e); }
+      // Archive this occurrence in recurrenceHistory
+      const historyEntry = {
+        completedDate: ds,
+        completedAt: new Date().toISOString(),
+        startDate: t.startDate || ds,
+        deadline: t.deadline || ds
+      };
+      const updatedHistory = [...(t.recurrenceHistory || []), historyEntry];
+
+      if (next) {
+        // Advance the task: reset startDate/deadline to next occurrence,
+        // clear completedDates (fresh slate for the new period), keep history
+        const nextStr = toDateStr(next);
+        const updatedTask = {
+          ...t,
+          startDate:         nextStr,
+          deadline:          nextStr,
+          completedDates:    [],          // reset — next occurrence is pending
+          completed:         false,
+          completedAt:       null,
+          recurrenceHistory: updatedHistory,
+          updatedAtLocal:    new Date().toISOString()
+        };
+        tasks[id] = updatedTask;
+
+        persistLocalState();
+        renderAllLocal();
+
+        // Show a brief toast so the user knows the roll-forward happened
+        showToast?.(`🔄 Done! Next occurrence set to ${nextStr}`, 'success');
+
+        try {
+          if (uid) {
+            await updateDoc(doc(db, 'users', uid, 'tasks', id), {
+              startDate:         nextStr,
+              deadline:          nextStr,
+              completedDates:    [],
+              completed:         false,
+              completedAt:       null,
+              recurrenceHistory: updatedHistory,
+              updatedAt:         serverTimestamp()
+            });
+          }
+          const el = event?.currentTarget;
+          await addXP(t.xp || 10, t.roleId, el);
+          await updateStreak();
+        } catch (e) { showSaveError('Task completion', e); }
+
+      } else {
+        // No more occurrences (series ended) — mark as fully completed
+        const updatedTask = {
+          ...t,
+          completed:         true,
+          completedAt:       new Date().toISOString(),
+          completedDates:    [...completedDates, ds],
+          recurrenceHistory: updatedHistory,
+          updatedAtLocal:    new Date().toISOString()
+        };
+        tasks[id] = updatedTask;
+
+        persistLocalState();
+        renderAllLocal();
+        showToast?.('🎉 Series complete! All recurrences done.', 'success');
+
+        try {
+          if (uid) {
+            await updateDoc(doc(db, 'users', uid, 'tasks', id), {
+              completed:         true,
+              completedAt:       updatedTask.completedAt,
+              completedDates:    updatedTask.completedDates,
+              recurrenceHistory: updatedHistory,
+              updatedAt:         serverTimestamp()
+            });
+          }
+          const el = event?.currentTarget;
+          await addXP(t.xp || 10, t.roleId, el);
+          await updateStreak();
+        } catch (e) { showSaveError('Task completion', e); }
+      }
     }
+
   } else {
-    // Non-recurring: global toggle (original behaviour)
+    // ── Non-recurring: global toggle (original behaviour) ────────────────
     const newDone = !t.completed;
     tasks[id] = { ...t, completed: newDone, completedAt: newDone ? new Date().toISOString() : null };
     persistLocalState();
