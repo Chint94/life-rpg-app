@@ -3250,22 +3250,17 @@ function isOccurrenceComplete(t, date) {
   const isRecurring = t.recurrence && t.recurrence !== 'none';
   if (!isRecurring) return !!t.completed; // non-recurring: use global flag
   if (t.completed) return true; // series fully finished
+
   const ds = toDateStr(date);
-  // Legacy path: completedDates array still present (pre-v18 data)
+
+  // Primary check: lastCompletedDate is set to exactly the date that was ticked.
+  // If the queried date matches it, this occurrence is done.
+  // The next occurrence (startDate) will be a different date, so it shows unchecked.
+  if (t.lastCompletedDate === ds) return true;
+
+  // Legacy fallback: completedDates array (pre-v18 data)
   if ((t.completedDates || []).includes(ds)) return true;
-  // Auto-advance path:
-  // After completion, startDate is set to the NEXT pending occurrence.
-  // - If the queried date equals startDate → this is the freshly-rolled-to
-  //   pending occurrence, so it is NOT yet complete → return false.
-  // - If startDate is strictly AFTER the queried date → the queried date was
-  //   a past occurrence that was already completed → return true.
-  if (t.startDate) {
-    const taskStart = startOfDay(parseDateOnly(t.startDate));
-    const targetDay = startOfDay(date);
-    if (!taskStart) return false;
-    if (taskStart.getTime() === targetDay.getTime()) return false; // pending next occurrence
-    if (taskStart > targetDay) return true; // past occurrence, already completed
-  }
+
   return false;
 }
 
@@ -3966,6 +3961,7 @@ window.toggleTask = async (id, event, dateStr) => {
           completedDates:    [],          // reset — next occurrence is pending
           completed:         false,
           completedAt:       null,
+          lastCompletedDate: ds,          // the date just ticked; drives isOccurrenceComplete
           recurrenceHistory: updatedHistory,
           updatedAtLocal:    new Date().toISOString()
         };
@@ -3985,6 +3981,7 @@ window.toggleTask = async (id, event, dateStr) => {
               completedDates:    [],
               completed:         false,
               completedAt:       null,
+              lastCompletedDate: ds,
               recurrenceHistory: updatedHistory,
               updatedAt:         serverTimestamp()
             });
