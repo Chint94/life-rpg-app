@@ -2317,7 +2317,7 @@ body.simple-mode .xp-pop{display:none!important;}
               <div class="donut-caption">Total Tasks</div>
             </div>
             <div class="insights-metrics">
-              <div class="metric-row completed"><span>Completed</span><strong id="insight-completed">0</strong></div>
+              <div class="metric-row completed"><span>Completed (One-Time)</span><strong id="insight-completed">0</strong></div>
               <div class="metric-row pending"><span>Pending</span><strong id="insight-pending">0</strong></div>
               <div class="metric-row overdue"><span>Overdue</span><strong id="insight-overdue">0</strong></div>
               <div class="metric-row today"><span>Due Today</span><strong id="insight-today">0</strong></div>
@@ -2383,7 +2383,7 @@ body.simple-mode .xp-pop{display:none!important;}
           </div>
           <div class="status-card completed" onclick="openTaskStatus('completed')">
             <div class="status-value" id="stat-completed">0</div>
-            <div class="status-label">Completed</div>
+            <div class="status-label">Completed (One-Time)</div>
           </div>
         </div>
 
@@ -2547,7 +2547,7 @@ body.simple-mode .xp-pop{display:none!important;}
         <div class="filter-chip active" data-filter="all" onclick="setTaskFilter('all')">All</div>
         <div class="filter-chip" data-filter="pending" onclick="setTaskFilter('pending')">Pending</div>
         <div class="filter-chip" data-filter="pending_week" onclick="setTaskFilter('pending_week')">Pending This Week</div>
-        <div class="filter-chip" data-filter="completed" onclick="setTaskFilter('completed')">Completed</div>
+        <div class="filter-chip" data-filter="completed" onclick="setTaskFilter('completed')">Completed (One-Time)</div>
         <div class="filter-chip" data-filter="overdue" onclick="setTaskFilter('overdue')">Overdue</div>
         <div class="filter-chip" data-filter="overdue_week" onclick="setTaskFilter('overdue_week')">Overdue This Week</div>
       </div>
@@ -3926,10 +3926,12 @@ function renderTaskInsights() {
   const allTasks = Object.values(tasks || {});
   const total = allTasks.length;
   const today = new Date();
-  // For recurring: count completed if today's occurrence is done; one-time: global flag
+  // Completed (one-time tasks only — recurring tasks are excluded because each
+  // occurrence is independent and never gets a permanent "completed" flag).
   const completed = allTasks.filter(t => {
     const isRecurring = t.recurrence && t.recurrence !== 'none';
-    return isRecurring ? isOccurrenceComplete(t, today) : !!t.completed;
+    if (isRecurring) return false;
+    return !!t.completed;
   }).length;
   const overdue = allTasks.filter(t => isTaskOverdue(t)).length;
   const pending = allTasks.filter(t => isTaskPending(t)).length;
@@ -4014,13 +4016,12 @@ function renderDashboard() {
   if (statRoles) statRoles.textContent = Object.keys(roles).length;
   const pendingCount = Object.values(tasks).filter(t => taskIsPendingThisWeek(t)).length;
   const overdueCount = Object.values(tasks).filter(t => taskIsOverdueThisWeek(t)).length;
-  // For recurring tasks: count as "completed" if today's occurrence is done; for one-time: use global flag
+  // Completed card: one-time tasks only (recurring tasks never get a permanent
+  // "completed" flag — each occurrence is independent, so they are excluded here).
   const completedCount = Object.values(tasks).filter(t => {
     const isRecurring = t.recurrence && t.recurrence !== 'none';
-    if (!isRecurring) return !!t.completed;
-    // Series fully done, OR completed today and rolled to next occurrence
-    const _tds = toDateStr(new Date());
-    return t.completed || t.lastCompletedDate === _tds;
+    if (isRecurring) return false; // recurring tasks excluded from this card
+    return !!t.completed;
   }).length;
   const pendingEl = document.getElementById('stat-pending');
   const overdueEl = document.getElementById('stat-overdue');
@@ -4174,7 +4175,8 @@ function renderHQExtendedAnalytics() {
   const total = allTasks.length || 1;
   const completedCount = allTasks.filter(t => {
     const isRec = t.recurrence && t.recurrence !== 'none';
-    return isRec ? isOccurrenceComplete(t, today) : !!t.completed;
+    if (isRec) return false; // recurring excluded — each occurrence is independent
+    return !!t.completed;
   }).length;
   const overdueCount = allTasks.filter(t => isTaskOverdue(t)).length;
   const streak = userData.streak || 0;
