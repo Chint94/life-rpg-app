@@ -3253,9 +3253,7 @@ function isOccurrenceComplete(t, date) {
 
   const ds = toDateStr(date);
 
-  // Primary check: lastCompletedDate is set to exactly the date that was ticked.
-  // If the queried date matches it, this occurrence is done.
-  // The next occurrence (startDate) will be a different date, so it shows unchecked.
+  // lastCompletedDate holds exactly the date that was most recently ticked.
   if (t.lastCompletedDate === ds) return true;
 
   // Legacy fallback: completedDates array (pre-v18 data)
@@ -3509,7 +3507,9 @@ function renderDashboard() {
   // For recurring tasks: count as "completed" if today's occurrence is done; for one-time: use global flag
   const completedCount = Object.values(tasks).filter(t => {
     const isRecurring = t.recurrence && t.recurrence !== 'none';
-    return isRecurring ? isOccurrenceComplete(t, new Date()) : !!t.completed;
+    if (!isRecurring) return !!t.completed;
+    const _tds = toDateStr(new Date());
+    return t.completed || (t.startDate > _tds && t.lastCompletedDate === _tds);
   }).length;
   const pendingEl = document.getElementById('stat-pending');
   const overdueEl = document.getElementById('stat-overdue');
@@ -3574,7 +3574,9 @@ function buildTaskMiniHTML(t) {
   const roleColor = role ? role.color : '#6b7299';
   const isRecurring = t.recurrence && t.recurrence !== 'none';
   const todayStr = toDateStr(new Date());
-  const isDoneToday = isRecurring ? isOccurrenceComplete(t, new Date()) : !!t.completed;
+  const isDoneToday = isRecurring
+    ? (!!t.completed || (t.startDate > toDateStr(new Date()) && t.lastCompletedDate === toDateStr(new Date())))
+    : !!t.completed;
   const toggleCall = isRecurring
     ? `toggleTask('${t.id}',event,'${todayStr}')`
     : `toggleTask('${t.id}',event)`;
@@ -3795,7 +3797,9 @@ function renderTasks() {
   else if (taskFilter === 'completed') arr = arr.filter(t => {
     if (t.parentRecurId) return !!t.completed; // child: use global flag
     const isRecurring = t.recurrence && t.recurrence !== 'none';
-    return isRecurring ? isOccurrenceComplete(t, new Date()) : !!t.completed;
+    if (!isRecurring) return !!t.completed;
+    const _tds = toDateStr(new Date());
+    return t.completed || (t.startDate > _tds && t.lastCompletedDate === _tds);
   });
   else if (taskFilter === 'overdue') arr = arr.filter(t => isTaskOverdue(t));
   else if (taskFilter === 'overdue_week') arr = arr.filter(t => taskIsOverdueThisWeek(t));
@@ -3842,10 +3846,13 @@ function buildTaskCardHTML(t) {
   // but kept for backward compat with any tasks created by older versions.
   const isSpawnedChild = !!t.parentRecurId;
 
-  // For display: a recurring task is "done today" if it has been completed and rolled forward
-  // (its startDate moved past today), or if the global completed flag is set.
+  // For display: a recurring task's checkbox state is determined by startDate vs today.
+  // - startDate > today AND lastCompletedDate == today → completed & rolled → CHECKED
+  // - startDate <= today → pending next occurrence → UNCHECKED
+  // This avoids the isOccurrenceComplete(today) trap where lastCompletedDate===today
+  // keeps the checkbox green even after the task has rolled to tomorrow.
   const isDoneToday = isRecurring
-    ? isOccurrenceComplete(t, today)
+    ? (!!t.completed || (t.startDate > todayStr && t.lastCompletedDate === todayStr))
     : !!t.completed;
 
   let deadlineHTML = '';
